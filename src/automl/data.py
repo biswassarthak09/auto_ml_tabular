@@ -1,8 +1,19 @@
 from __future__ import annotations
 
-import pandas as pd
-from pathlib import Path
+# import pandas as pd
+# from pathlib import Path
 from dataclasses import dataclass
+# from sklearn.pipeline import Pipeline
+# from sklearn.compose  import ColumnTransformer
+# from sklearn.impute   import SimpleImputer
+# from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from pathlib import Path
+import pandas as pd
+from sklearn.pipeline       import Pipeline
+from sklearn.compose        import ColumnTransformer
+from sklearn.impute         import SimpleImputer
+from sklearn.preprocessing  import OneHotEncoder, StandardScaler
+
 
 import logging
 
@@ -39,3 +50,40 @@ class Dataset:
             if y_test_path.exists()
             else None,
         )
+    @staticmethod
+    def build_preprocessor(df: pd.DataFrame) -> ColumnTransformer:
+        num_cols = df.select_dtypes(include="number").columns.tolist()
+        cat_cols = df.select_dtypes(exclude="number").columns.tolist()
+        
+        num_pipe = Pipeline([
+            ("i0mpute", SimpleImputer(strategy="median")),
+            ("scale", StandardScaler()),
+        ])
+        
+        cat_pipe = Pipeline([
+            ("impute", SimpleImputer(strategy="constant", fill_value="MISSING")),
+            ("ohe", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+        ])
+        
+        return ColumnTransformer([
+            ("num", num_pipe, num_cols),
+            ("cat", cat_pipe, cat_cols),
+        ], remainder="drop")
+        
+    @classmethod
+    def load_and_preprocess(cls, datadir: Path, task: str, fold: int):
+        
+        """
+        Load via Dataset.load(), fit the preprocessor on train,
+        transform both train & test, and return arrays.
+        """
+        #load raw splits
+        ds = Dataset.load(Path(datadir), task, fold)
+        
+        #build and fit the preprocessor
+        pre = ds.build_preprocessor(ds.X_train)
+        X_tr = pre.fit_transform(ds.X_train)
+        X_te = pre.transform(ds.X_test)
+        
+        #return as arrays
+        return X_tr, X_te, ds.y_train.values, ds.y_test.values
