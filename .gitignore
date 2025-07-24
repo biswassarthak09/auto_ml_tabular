@@ -11,3 +11,7 @@ automl-tabular-env
 !data/exam_dataset/1/*.npy
 
 data_engineered/
+data_engineered_autofeat/
+result/
+
+advanced_meta_learning_models/
