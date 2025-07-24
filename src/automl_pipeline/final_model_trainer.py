@@ -8,7 +8,6 @@ from typing import Dict, Any, List, Tuple, Optional
 import torch
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, AdaBoostRegressor
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.neural_network import MLPRegressor
 from sklearn.linear_model import Ridge, Lasso
 from sklearn.metrics import (mean_squared_error, mean_absolute_error, r2_score)
 from sklearn.model_selection import cross_val_score
@@ -17,6 +16,29 @@ import seaborn as sns
 from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
+
+# GPU-accelerated imports - Initialize as None for optional dependencies
+xgb = None
+lgb = None
+
+try:
+    import xgboost as xgb
+    XGBOOST_AVAILABLE = True
+except ImportError:
+    XGBOOST_AVAILABLE = False
+    
+try:
+    import lightgbm as lgb
+    LIGHTGBM_AVAILABLE = True
+except ImportError:
+    LIGHTGBM_AVAILABLE = False
+
+try:
+    # Import PyTorch MLP from nas_hpo_optuna
+    from .nas_hpo_optuna import PyTorchMLP, PYTORCH_AVAILABLE
+except ImportError:
+    PyTorchMLP = None
+    PYTORCH_AVAILABLE = False
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -42,16 +64,38 @@ class FinalModelTrainer:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.meta_learning_model_dir = meta_learning_model_dir
         
-        # Algorithm mapping for regression
+        # Simple CUDA check
+        self.cuda_available = torch.cuda.is_available() if torch else False
+        
+        if self.cuda_available:
+            logger.info("🚀 CUDA detected! GPU acceleration will be used where available")
+        else:
+            logger.info("💻 Using CPU-only mode")
+        
+        # Algorithm mapping for regression - Updated with GPU support
         self.algorithm_map = {
             'random_forest': RandomForestRegressor,
             'gradient_boosting': GradientBoostingRegressor,
             'ada_boost': AdaBoostRegressor,
-            'mlp': MLPRegressor,
             'decision_tree': DecisionTreeRegressor,
             'ridge': Ridge,
             'lasso': Lasso
         }
+        
+        # Add GPU-accelerated algorithms if available
+        if XGBOOST_AVAILABLE:
+            self.algorithm_map['xgboost'] = xgb.XGBRegressor
+            logger.info("✅ XGBoost available for final model training")
+            
+        if LIGHTGBM_AVAILABLE:
+            self.algorithm_map['lightgbm'] = lgb.LGBMRegressor
+            logger.info("✅ LightGBM available for final model training")
+            
+        if PYTORCH_AVAILABLE and PyTorchMLP:
+            self.algorithm_map['mlp'] = PyTorchMLP
+            logger.info("✅ PyTorch MLP available for final model training (GPU/CPU auto-detection)")
+        
+        logger.info(f"📋 Total algorithms available for final training: {len(self.algorithm_map)}")
         
         # Load meta-learning model if available
         self.meta_model = None
@@ -134,17 +178,31 @@ class FinalModelTrainer:
             except Exception as e:
                 logger.warning(f"Error reading NAS-HPO results: {str(e)}")
         
-        # Final fallback to default Random Forest
-        logger.warning(f"No prediction found for {dataset_name}, using default Random Forest")
-        return 'random_forest', {'n_estimators': 100, 'random_state': 42}
+        # Final fallback to well-tuned Random Forest
+        logger.warning(f"No prediction found for {dataset_name}, using robust Random Forest fallback")
+        return 'random_forest', {
+            'n_estimators': 100, 
+            'max_depth': 10,
+            'min_samples_split': 5,
+            'max_features': 'sqrt',
+            'random_state': 42,
+            'n_jobs': -1
+        }
     
     def create_model(self, algorithm: str, hyperparams: Dict[str, Any]):
         """Create model instance with specified algorithm and hyperparameters"""
         
         if algorithm not in self.algorithm_map:
-            logger.warning(f"Unknown algorithm: {algorithm}, using RandomForest")
+            logger.warning(f"Unknown algorithm: {algorithm}, using Random Forest fallback")
             algorithm = 'random_forest'
-            hyperparams = {'n_estimators': 100, 'random_state': 42}
+            hyperparams = {
+                'n_estimators': 100, 
+                'max_depth': 10,
+                'min_samples_split': 5,
+                'max_features': 'sqrt',
+                'random_state': 42,
+                'n_jobs': -1
+            }
         
         model_class = self.algorithm_map[algorithm]
         
@@ -157,14 +215,38 @@ class FinalModelTrainer:
         if 'random_state' in valid_params and 'random_state' not in filtered_params:
             filtered_params['random_state'] = 42
             
+        # Add GPU parameters for supported algorithms
+        if algorithm == 'xgboost' and self.cuda_available:
+            filtered_params.update({
+                'device': 'cuda',
+                'tree_method': 'gpu_hist'
+            })
+            logger.info("Using GPU acceleration for XGBoost")
+            
+        elif algorithm == 'lightgbm' and self.cuda_available:
+            filtered_params.update({'device': 'gpu'})
+            logger.info("Using GPU acceleration for LightGBM")
+            
+        elif algorithm == 'mlp' and PYTORCH_AVAILABLE:
+            # PyTorch MLP handles device automatically
+            filtered_params['device'] = 'auto'
+            logger.info("Using PyTorch MLP with auto GPU/CPU detection")
+            
         try:
             model = model_class(**filtered_params)
             logger.info(f"Created {algorithm} model with params: {filtered_params}")
             return model
         except Exception as e:
-            logger.error(f"Error creating model: {str(e)}")
-            # Fallback to simple Random Forest
-            return RandomForestRegressor(n_estimators=100, random_state=42)
+            logger.error(f"Error creating {algorithm} model: {str(e)}")
+            logger.warning(f"Falling back to Random Forest for {algorithm}")
+            # Use a more robust fallback with basic parameters
+            return RandomForestRegressor(
+                n_estimators=100, 
+                max_depth=10,
+                min_samples_split=5,
+                random_state=42,
+                n_jobs=-1  # Use all CPU cores for fallback
+            )
     
     def load_dataset_data(self, dataset_name: str, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         """

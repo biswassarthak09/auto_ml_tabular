@@ -8,24 +8,198 @@ from optuna.samplers import TPESampler
 import joblib
 import logging
 from typing import Dict, List, Tuple, Any
-from sklearn.model_selection import cross_val_score
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, ExtraTreesRegressor, AdaBoostRegressor
-from sklearn.svm import SVR
-from sklearn.neural_network import MLPRegressor
-from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, AdaBoostRegressor
+from sklearn.linear_model import Ridge, Lasso
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import warnings
 warnings.filterwarnings('ignore')
 
+# GPU-accelerated imports - Initialize as None for optional dependencies
+xgb = None
+lgb = None  
+torch = None
+nn = None
+optim = None
+DataLoader = None
+TensorDataset = None
+StandardScaler = None
+
+try:
+    import xgboost as xgb
+    XGBOOST_AVAILABLE = True
+except ImportError:
+    XGBOOST_AVAILABLE = False
+    
+try:
+    import lightgbm as lgb
+    LIGHTGBM_AVAILABLE = True
+except ImportError:
+    LIGHTGBM_AVAILABLE = False
+
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+    from torch.utils.data import DataLoader, TensorDataset
+    from sklearn.preprocessing import StandardScaler
+    PYTORCH_AVAILABLE = True
+except ImportError:
+    PYTORCH_AVAILABLE = False
+
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+class PyTorchMLP:
+    """GPU-accelerated MLP using PyTorch"""
+    
+    def __init__(self, hidden_layer_sizes=(100,), activation='relu', learning_rate=0.001, 
+                 max_iter=200, batch_size=32, device='auto', early_stopping=True, 
+                 validation_fraction=0.1, n_iter_no_change=10, alpha=0.0001):
+        if not PYTORCH_AVAILABLE:
+            raise ImportError("PyTorch is not available. Please install torch to use PyTorchMLP.")
+            
+        self.hidden_layer_sizes = hidden_layer_sizes
+        self.activation = activation
+        self.learning_rate = learning_rate
+        self.max_iter = max_iter
+        self.batch_size = batch_size
+        self.early_stopping = early_stopping
+        self.validation_fraction = validation_fraction
+        self.n_iter_no_change = n_iter_no_change
+        self.alpha = alpha
+        
+        # Device setup
+        if device == 'auto':
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        else:
+            self.device = torch.device(device)
+            
+        self.model = None
+        self.scaler = StandardScaler()
+        
+    def _create_model(self, input_size):
+        """Create PyTorch model"""
+        if not PYTORCH_AVAILABLE:
+            raise ImportError("PyTorch is not available.")
+            
+        layers = []
+        prev_size = input_size
+        
+        for size in self.hidden_layer_sizes:
+            layers.append(nn.Linear(prev_size, size))
+            if self.activation == 'relu':
+                layers.append(nn.ReLU())
+            elif self.activation == 'tanh':
+                layers.append(nn.Tanh())
+            layers.append(nn.Dropout(self.alpha))
+            prev_size = size
+            
+        # Output layer
+        layers.append(nn.Linear(prev_size, 1))
+        
+        return nn.Sequential(*layers).to(self.device)
+    
+    def fit(self, X, y):
+        """Fit the model"""
+        if not PYTORCH_AVAILABLE:
+            raise ImportError("PyTorch is not available.")
+            
+        # Convert to numpy if pandas
+        if hasattr(X, 'values'):
+            X = X.values
+        if hasattr(y, 'values'):
+            y = y.values
+            
+        # Scale features
+        X_scaled = self.scaler.fit_transform(X)
+        
+        # Convert to tensors
+        X_tensor = torch.FloatTensor(X_scaled).to(self.device)
+        y_tensor = torch.FloatTensor(y.reshape(-1, 1)).to(self.device)
+        
+        # Create model
+        self.model = self._create_model(X_scaled.shape[1])
+        
+        # Split for validation if early stopping
+        if self.early_stopping:
+            val_size = int(len(X_tensor) * self.validation_fraction)
+            train_size = len(X_tensor) - val_size
+            
+            X_train, X_val = X_tensor[:train_size], X_tensor[train_size:]
+            y_train, y_val = y_tensor[:train_size], y_tensor[train_size:]
+        else:
+            X_train, y_train = X_tensor, y_tensor
+            X_val, y_val = None, None
+            
+        # Create data loader
+        train_dataset = TensorDataset(X_train, y_train)
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+        
+        # Optimizer and loss
+        optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        criterion = nn.MSELoss()
+        
+        # Training loop
+        best_val_loss = float('inf')
+        patience_counter = 0
+        
+        for epoch in range(self.max_iter):
+            # Training
+            self.model.train()
+            train_loss = 0
+            for batch_X, batch_y in train_loader:
+                optimizer.zero_grad()
+                outputs = self.model(batch_X)
+                loss = criterion(outputs, batch_y)
+                loss.backward()
+                optimizer.step()
+                train_loss += loss.item()
+            
+            # Validation
+            if self.early_stopping and X_val is not None and y_val is not None:
+                self.model.eval()
+                with torch.no_grad():
+                    val_outputs = self.model(X_val)
+                    val_loss = criterion(val_outputs, y_val).item()
+                    
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    patience_counter = 0
+                else:
+                    patience_counter += 1
+                    
+                if patience_counter >= self.n_iter_no_change:
+                    break
+                    
+        return self
+    
+    def predict(self, X):
+        """Make predictions"""
+        if not PYTORCH_AVAILABLE:
+            raise ImportError("PyTorch is not available.")
+            
+        if self.model is None:
+            raise ValueError("Model has not been fitted yet. Call fit() first.")
+            
+        if hasattr(X, 'values'):
+            X = X.values
+            
+        X_scaled = self.scaler.transform(X)
+        X_tensor = torch.FloatTensor(X_scaled).to(self.device)
+        
+        self.model.eval()
+        with torch.no_grad():
+            predictions = self.model(X_tensor)
+            
+        return predictions.cpu().numpy().flatten()
+
 class NASHPOOptimizer:
     """
     Neural Architecture Search and Hyperparameter Optimization using Optuna
+    Enhanced with GPU acceleration
     """
     
     def __init__(self, data_dir: str, results_dir: str, task_type: str = 'regression'):
@@ -42,27 +216,63 @@ class NASHPOOptimizer:
         self.task_type = task_type
         self.results_dir.mkdir(parents=True, exist_ok=True)
         
-        # Define algorithm space for NAS - Focused on high-performance algorithms
-        self.core_algorithms = {
-            # High-performance algorithms for main optimization
-            'gradient_boosting': GradientBoostingRegressor,
+        # Simple CUDA check
+        if PYTORCH_AVAILABLE:
+            self.cuda_available = torch.cuda.is_available()
+        else:
+            self.cuda_available = False
+            
+        if self.cuda_available:
+            logger.info("🚀 CUDA detected! GPU acceleration will be used where available")
+        else:
+            logger.info("💻 Using CPU-only mode")
+        
+        # Setup algorithms
+        self._setup_algorithms()
+        
+        self.optimization_results = []
+    
+    def _setup_algorithms(self):
+        """Setup algorithm space with optional GPU acceleration"""
+        
+        # Core algorithms (always available)
+        self.algorithm_space = {
             'random_forest': RandomForestRegressor,
+            'gradient_boosting': GradientBoostingRegressor,
             'ada_boost': AdaBoostRegressor,
-            'mlp': MLPRegressor,
+            'decision_tree': DecisionTreeRegressor,
+            'knn': KNeighborsRegressor,
+            'ridge': Ridge,
+            'lasso': Lasso,
+        }
+        
+        # Add GPU-accelerated algorithms if available
+        if XGBOOST_AVAILABLE:
+            self.algorithm_space['xgboost'] = xgb.XGBRegressor
+            logger.info("✅ XGBoost available")
+            
+        if LIGHTGBM_AVAILABLE:
+            self.algorithm_space['lightgbm'] = lgb.LGBMRegressor
+            logger.info("✅ LightGBM available")
+            
+        if PYTORCH_AVAILABLE:
+            self.algorithm_space['mlp'] = PyTorchMLP  # GPU/CPU auto-detection
+            logger.info("✅ PyTorch MLP available (GPU/CPU auto-detection)")
+        
+        logger.info(f"📋 Total algorithms available: {len(self.algorithm_space)}")
+        
+        # Keep track of core algorithms for quick testing
+        self.core_algorithms = {
+            'random_forest': RandomForestRegressor,
+            'gradient_boosting': GradientBoostingRegressor,
+            'ada_boost': AdaBoostRegressor,
             'decision_tree': DecisionTreeRegressor,
             'knn': KNeighborsRegressor,
         }
         
-        # Baseline algorithms for comparison (simpler methods)
-        self.baseline_algorithms = {
-            'ridge': Ridge,  # Regularized linear - good baseline
-            'lasso': Lasso,  # Feature selection - good for high-dimensional data
-        }
-        
-        # Combined algorithm space (use core by default)
-        self.algorithm_space = {**self.core_algorithms, **self.baseline_algorithms}
-        
-        self.optimization_results = []
+        # Add MLP if PyTorch is available
+        if PYTORCH_AVAILABLE:
+            self.core_algorithms['mlp'] = PyTorchMLP
     
     def load_fold_data(self, dataset_name: str, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         """Load engineered data for specific dataset and fold"""
@@ -100,6 +310,67 @@ class NASHPOOptimizer:
                 'random_state': 42
             }
         
+        elif algorithm == 'xgboost':
+            params = {
+                'n_estimators': trial.suggest_int('n_estimators', 50, 500),
+                'max_depth': trial.suggest_int('max_depth', 3, 15),
+                'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
+                'subsample': trial.suggest_float('subsample', 0.6, 1.0),
+                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.6, 1.0),
+                'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+                'reg_alpha': trial.suggest_float('reg_alpha', 0, 10),
+                'reg_lambda': trial.suggest_float('reg_lambda', 0, 10),
+                'random_state': 42,
+                'verbosity': 0
+            }
+            # Use GPU if available
+            if self.cuda_available:
+                params.update({
+                    'device': 'cuda',
+                    'tree_method': 'gpu_hist'
+                })
+        
+        elif algorithm == 'lightgbm':
+            params = {
+                'n_estimators': trial.suggest_int('n_estimators', 50, 500),
+                'max_depth': trial.suggest_int('max_depth', 3, 15),
+                'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
+                'subsample': trial.suggest_float('subsample', 0.6, 1.0),
+                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.6, 1.0),
+                'min_child_weight': trial.suggest_float('min_child_weight', 0.1, 10),
+                'reg_alpha': trial.suggest_float('reg_alpha', 0, 10),
+                'reg_lambda': trial.suggest_float('reg_lambda', 0, 10),
+                'num_leaves': trial.suggest_int('num_leaves', 10, 300),
+                'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 5, 100),
+                'random_state': 42,
+                'verbosity': -1
+            }
+            # Use GPU if available
+            if self.cuda_available:
+                params.update({'device': 'gpu'})
+        
+        elif algorithm == 'mlp':
+            # PyTorch MLP with GPU/CPU auto-detection
+            n_layers = trial.suggest_int('n_layers', 1, 4)
+            hidden_layer_sizes = []
+            
+            for i in range(n_layers):
+                layer_size = trial.suggest_int(f'layer_{i}_size', 50, 512)
+                hidden_layer_sizes.append(layer_size)
+            
+            params = {
+                'hidden_layer_sizes': tuple(hidden_layer_sizes),
+                'activation': trial.suggest_categorical('activation', ['relu', 'tanh']),
+                'learning_rate': trial.suggest_float('learning_rate', 0.0001, 0.01, log=True),
+                'batch_size': trial.suggest_categorical('batch_size', [32, 64, 128, 256]),
+                'max_iter': trial.suggest_int('max_iter', 100, 500),
+                'alpha': trial.suggest_float('alpha', 0.0001, 0.01, log=True),
+                'device': 'auto',  # Auto GPU/CPU detection
+                'early_stopping': True,
+                'validation_fraction': 0.1,
+                'n_iter_no_change': 15
+            }
+        
         elif algorithm == 'svm':
             params = {
                 'C': trial.suggest_float('C', 0.01, 100, log=True),
@@ -108,31 +379,6 @@ class NASHPOOptimizer:
             }
             if params['kernel'] == 'poly':
                 params['degree'] = trial.suggest_int('degree', 2, 5)
-        
-        elif algorithm == 'mlp':
-            n_layers = trial.suggest_int('n_layers', 1, 4)
-            hidden_layer_sizes = []
-            
-            for i in range(n_layers):
-                layer_size = trial.suggest_int(f'layer_{i}_size', 50, 300)
-                hidden_layer_sizes.append(layer_size)
-            
-            params = {
-                'hidden_layer_sizes': tuple(hidden_layer_sizes),
-                'activation': trial.suggest_categorical('activation', ['relu', 'tanh']),
-                'solver': trial.suggest_categorical('solver', ['adam', 'lbfgs']),
-                'alpha': trial.suggest_float('alpha', 0.0001, 0.01, log=True),
-                'learning_rate': trial.suggest_categorical('learning_rate', ['constant', 'adaptive']),
-                'learning_rate_init': trial.suggest_float('learning_rate_init', 0.0001, 0.01, log=True),
-                'batch_size': trial.suggest_categorical('batch_size', ['auto', 32, 64, 128, 256]),
-                'beta_1': trial.suggest_float('beta_1', 0.8, 0.99),
-                'beta_2': trial.suggest_float('beta_2', 0.9, 0.999),
-                'max_iter': 800,
-                'early_stopping': True,
-                'validation_fraction': 0.1,
-                'n_iter_no_change': 15,
-                'random_state': 42
-            }
         
         elif algorithm == 'ridge':
             params = {
@@ -175,7 +421,7 @@ class NASHPOOptimizer:
         return params
     
     def objective(self, trial: optuna.Trial, dataset_name: str, algorithm: str) -> float:
-        """Objective function for Optuna optimization"""
+        """Objective function for optimization"""
         try:
             # Get hyperparameters
             params = self.suggest_hyperparameters(trial, algorithm)
