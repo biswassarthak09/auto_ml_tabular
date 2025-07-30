@@ -594,8 +594,9 @@ class AdvancedMetaLearningAutoML:
             if avg_loss < best_loss:
                 best_loss = avg_loss
                 patience_counter = 0
-                # Save best model
-                torch.save(self.model.state_dict(), self.output_dir / 'best_model.pth')
+                # Save best model with proper path handling
+                best_model_path = str((self.output_dir / 'best_model.pth').absolute())
+                torch.save(self.model.state_dict(), best_model_path)
             else:
                 patience_counter += 1
             
@@ -777,10 +778,12 @@ class AdvancedMetaLearningAutoML:
                 logger.error("No trained model to save!")
                 return False
                 
-            save_dir = Path(save_path)
-            save_dir.mkdir(parents=True, exist_ok=True)
+            # Simple cross-platform path handling - os.path.join handles everything!
+            import os
+            os.makedirs(save_path, exist_ok=True)
             
-            # Save model state
+            # Save model
+            save_file_path = os.path.join(save_path, "meta_model.pth")
             torch.save({
                 'model_state_dict': self.model.state_dict(),
                 'feature_scaler': self.feature_scaler,
@@ -791,9 +794,9 @@ class AdvancedMetaLearningAutoML:
                     'hidden_dim': self.hidden_dim,
                     'hp_dim': self.hp_dim
                 }
-            }, save_dir / "meta_model.pth")
+            }, save_file_path)
             
-            logger.info(f"Meta-learning model saved to {save_dir}")
+            logger.info(f"Meta-learning model saved to {save_path}")
             return True
             
         except Exception as e:
@@ -803,12 +806,15 @@ class AdvancedMetaLearningAutoML:
     def load_model(self, load_path: str = "meta_learning_model"):
         """Load a trained meta-learning model"""
         try:
-            model_path = Path(load_path) / "meta_model.pth"
-            if not model_path.exists():
-                logger.error(f"Model file not found: {model_path}")
+            # Simple cross-platform path handling - os.path.join handles everything!
+            import os
+            model_file_path = os.path.join(load_path, "meta_model.pth")
+            if not os.path.exists(model_file_path):
+                logger.error(f"Model file not found: {model_file_path}")
                 return False
                 
-            checkpoint = torch.load(model_path, map_location=self.device, weights_only=False)
+            # Load model
+            checkpoint = torch.load(model_file_path, map_location=self.device, weights_only=False)
             
             # Restore configuration
             config = checkpoint['model_config']
