@@ -120,14 +120,55 @@ class FeatureEngineer:
         
         return df_scaled
     
-    def check_for_nans(self, df: pd.DataFrame):
+    def check_for_nans_and_infs(self, df: pd.DataFrame, name: str = "data"):
         """
-        Check if there are any NaN values in the DataFrame and raise an error if any are found.
+        Check if there are any NaN or infinite values in the DataFrame and clean them.
         """
-        if df.isnull().values.any():
-            raise ValueError("The input data contains NaN values. Please ensure all missing values are handled.")
+        # Check for NaNs
+        nan_count = df.isnull().sum().sum()
+        if nan_count > 0:
+            logger.warning(f"{name} contains {nan_count} NaN values. Filling with median/mode.")
+            # Fill numeric NaNs with median, categorical with mode
+            for col in df.columns:
+                if df[col].dtype in ['object', 'category']:
+                    mode_val = df[col].mode()
+                    if len(mode_val) > 0:
+                        df[col] = df[col].fillna(mode_val[0])
+                    else:
+                        df[col] = df[col].fillna('missing')
+                else:
+                    median_val = df[col].median()
+                    if pd.isna(median_val):
+                        df[col] = df[col].fillna(0)
+                    else:
+                        df[col] = df[col].fillna(median_val)
+        
+        # Check for infinite values
+        if np.isinf(df.select_dtypes(include=[np.number]).values).any():
+            logger.warning(f"{name} contains infinite values. Clipping to finite range.")
+            numeric_cols = df.select_dtypes(include=[np.number]).columns
+            for col in numeric_cols:
+                # Replace positive infinity with 99th percentile
+                col_values = df[col][np.isfinite(df[col])]
+                if len(col_values) > 0:
+                    p99 = np.percentile(col_values, 99)
+                    p1 = np.percentile(col_values, 1)
+                    df[col] = df[col].replace([np.inf], p99)
+                    df[col] = df[col].replace([-np.inf], p1)
+                else:
+                    # If all values are infinite, replace with 0
+                    df[col] = df[col].replace([np.inf, -np.inf], 0)
+        
+        # Final check
+        final_nan_count = df.isnull().sum().sum()
+        final_inf_count = np.isinf(df.select_dtypes(include=[np.number]).values).sum()
+        
+        if final_nan_count == 0 and final_inf_count == 0:
+            logger.info(f"No NaNs or infinities detected in {name}")
         else:
-            logger.info("No NaNs detected")
+            logger.warning(f"{name} still has {final_nan_count} NaNs and {final_inf_count} infinities after cleaning")
+        
+        return df
     
     def preprocess_data(self, X_train: pd.DataFrame, X_test: pd.DataFrame, 
                        is_first_fold: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -193,9 +234,9 @@ class FeatureEngineer:
         X_train_processed = self.normalize_data(X_train_processed, is_first_fold)
         X_test_processed = self.normalize_data(X_test_processed, is_first_fold=False)
         
-        # 4. Check for NaNs
-        self.check_for_nans(X_train_processed)
-        self.check_for_nans(X_test_processed)
+        # 4. Check for NaNs and infinities - and clean them
+        X_train_processed = self.check_for_nans_and_infs(X_train_processed, "X_train")
+        X_test_processed = self.check_for_nans_and_infs(X_test_processed, "X_test")
         
         logger.info(f"Preprocessing completed. Shape: {X_train_processed.shape}")
         return X_train_processed, X_test_processed
@@ -215,7 +256,7 @@ class FeatureEngineer:
                 featsel_runs=5,                     # More thorough feature selection
                 max_gb=2,                           # Slightly more memory for better features
                 n_jobs=1,                           # Single job to avoid memory issues
-                transformations=["1/", "log", "abs", "sqrt"],  # Basic transformations
+                transformations=["log", "abs", "sqrt"],  # Removed "1/" to prevent division by zero
                 verbose=1
             )
             logger.info("Fitting AutoFeat on first fold of dataset...")
@@ -227,6 +268,17 @@ class FeatureEngineer:
         
         # Transform test data
         X_test_engineered = self.autofeat_model.transform(X_test)
+        
+        # CRITICAL: Clean infinite and NaN values created by AutoFeat transformations
+        # AutoFeat can create "1/x" features which lead to infinity when x approaches 0
+        if isinstance(X_train_engineered, np.ndarray):
+            X_train_engineered = pd.DataFrame(X_train_engineered, index=X_train.index)
+        if isinstance(X_test_engineered, np.ndarray):
+            X_test_engineered = pd.DataFrame(X_test_engineered, index=X_test.index)
+        
+        # Clean infinite and NaN values from AutoFeat transformations
+        X_train_engineered = self.check_for_nans_and_infs(X_train_engineered, "AutoFeat X_train")
+        X_test_engineered = self.check_for_nans_and_infs(X_test_engineered, "AutoFeat X_test")
         
         # Convert to DataFrames and ensure proper types
         if not isinstance(X_train_engineered, pd.DataFrame):
