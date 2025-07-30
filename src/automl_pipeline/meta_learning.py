@@ -262,8 +262,8 @@ class AdvancedMetaLearningAutoML:
     
     def prepare_training_data(self, nas_hpo_results_dir: str, 
                             original_data_dir: str, fe_data_dir: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Prepare training data for MLP training"""
-        logger.info("Preparing training data for advanced meta-learning...")
+        """Prepare training data for MLP training using fold-level data"""
+        logger.info("Preparing fold-level training data for advanced meta-learning...")
         
         # Load NAS-HPO results
         nas_results = self._load_nas_hpo_results(nas_hpo_results_dir)
@@ -272,18 +272,34 @@ class AdvancedMetaLearningAutoML:
         datasets = list(set(result['dataset'] for result in nas_results))
         logger.info(f"Found datasets: {datasets}")
         
-        # Extract meta-features for all datasets
+        # Extract meta-features for all datasets (one per dataset)
         self.meta_features_df = self.meta_extractor.extract_all_datasets_meta_features(
             datasets, original_data_dir, fe_data_dir
         )
         
-        # Prepare targets
+        # Prepare fold-level targets
         algorithm_targets_df = self._prepare_algorithm_targets(nas_results)
         hyperparameter_targets_df = self._prepare_hyperparameter_targets(nas_results)
         
-        # Merge with meta-features
-        training_data = self.meta_features_df.merge(algorithm_targets_df, on='dataset', how='inner')
-        training_data = training_data.merge(hyperparameter_targets_df, on='dataset', how='inner')
+        # Create fold-level meta-features by replicating dataset meta-features for each fold
+        fold_meta_features = []
+        for _, algo_row in algorithm_targets_df.iterrows():
+            dataset = algo_row['dataset']
+            fold = algo_row['fold']
+            
+            # Find corresponding meta-features for this dataset
+            dataset_meta = self.meta_features_df[self.meta_features_df['dataset'] == dataset]
+            if not dataset_meta.empty:
+                meta_row = dataset_meta.iloc[0].copy()
+                meta_row['fold'] = fold  # Add fold column
+                meta_row['dataset_fold'] = f"{dataset}_fold_{fold}"
+                fold_meta_features.append(meta_row)
+        
+        fold_meta_features_df = pd.DataFrame(fold_meta_features)
+        
+        # Merge with fold-level targets
+        training_data = fold_meta_features_df.merge(algorithm_targets_df, on=['dataset', 'fold'], how='inner')
+        training_data = training_data.merge(hyperparameter_targets_df, on=['dataset', 'fold'], how='inner')
         
         # Prepare arrays for training
         feature_cols = [col for col in self.meta_features_df.columns if col != 'dataset']
@@ -318,12 +334,13 @@ class AdvancedMetaLearningAutoML:
         # Fill NaN with 0 after scaling
         y_hyperparams_scaled = np.nan_to_num(y_hyperparams_scaled, nan=0)
         
-        logger.info(f"Training data prepared:")
+        logger.info(f"Fold-level training data prepared:")
         logger.info(f"  Meta-features shape: {X_scaled.shape}")
         logger.info(f"  Algorithm targets shape: {np.array(y_algorithm_encoded).shape}")
         logger.info(f"  Hyperparameter targets shape: {y_hyperparams_scaled.shape}")
         logger.info(f"  Algorithms: {self.algorithms_list}")
         logger.info(f"  Hyperparameters: {len(hp_cols)}")
+        logger.info(f"  Total training examples: {len(X_scaled)} (fold-level)")
         
         return X_scaled, np.array(y_algorithm_encoded), y_hyperparams_scaled, hp_mask
     
@@ -350,71 +367,136 @@ class AdvancedMetaLearningAutoML:
         return results
     
     def _prepare_algorithm_targets(self, nas_results: List[Dict]) -> pd.DataFrame:
-        """Prepare algorithm selection targets"""
-        dataset_best = {}
+        """Prepare algorithm selection targets using fold-level data"""
+        rows = []
+        
         for result in nas_results:
             dataset = result['dataset']
             algorithm = result['algorithm']
-            score = result['best_score']
+            best_params = result['best_params']
+            fold_details = result.get('best_metrics', {}).get('fold_details', [])
             
-            if dataset not in dataset_best or score > dataset_best[dataset]['score']:
-                dataset_best[dataset] = {
-                    'best_algorithm': algorithm,
-                    'score': score,
-                    'params': result['best_params']
-                }
+            # Extract fold-level performance
+            if fold_details:
+                for fold_idx, fold_metrics in enumerate(fold_details, 1):
+                    composite_score = fold_metrics.get('composite_score', fold_metrics.get('r2', 0))
+                    
+                    rows.append({
+                        'dataset': dataset,
+                        'fold': fold_idx,
+                        'algorithm': algorithm,
+                        'score': composite_score,
+                        'params': best_params
+                    })
+            else:
+                # Fallback to aggregate score if fold details not available
+                rows.append({
+                    'dataset': dataset,
+                    'fold': 1,  # Default fold
+                    'algorithm': algorithm,
+                    'score': result['best_score'],
+                    'params': best_params
+                })
         
-        rows = []
-        for dataset, info in dataset_best.items():
-            rows.append({
-                'dataset': dataset,
-                'best_algorithm': info['best_algorithm'],
-                'best_score': info['score']
+        # For each dataset-fold combination, find the best algorithm
+        fold_level_df = pd.DataFrame(rows)
+        
+        if fold_level_df.empty:
+            return pd.DataFrame(columns=['dataset', 'fold', 'best_algorithm', 'best_score'])
+        
+        # Group by dataset and fold, find best algorithm for each
+        best_per_fold = fold_level_df.loc[fold_level_df.groupby(['dataset', 'fold'])['score'].idxmax()]
+        
+        # Create result dataframe manually to avoid pandas version issues
+        result_data = []
+        for _, row in best_per_fold.iterrows():
+            result_data.append({
+                'dataset': row['dataset'],
+                'fold': row['fold'],
+                'best_algorithm': row['algorithm'],
+                'best_score': row['score']
             })
         
-        return pd.DataFrame(rows)
+        result_df = pd.DataFrame(result_data)
+        
+        # Create unique identifier for dataset-fold combinations
+        result_df['dataset_fold'] = result_df['dataset'] + '_fold_' + result_df['fold'].astype(str)
+        
+        return result_df
     
     def _prepare_hyperparameter_targets(self, nas_results: List[Dict]) -> pd.DataFrame:
-        """Prepare hyperparameter targets"""
-        dataset_best = {}
+        """Prepare hyperparameter targets using fold-level data"""
+        rows = []
+        
         for result in nas_results:
             dataset = result['dataset']
-            score = result['best_score']
+            algorithm = result['algorithm']
+            best_params = result['best_params']
+            fold_details = result.get('best_metrics', {}).get('fold_details', [])
             
-            if dataset not in dataset_best or score > dataset_best[dataset]['score']:
-                dataset_best[dataset] = {
-                    'algorithm': result['algorithm'],
-                    'score': score,
-                    'params': result['best_params']
-                }
+            # Extract fold-level performance
+            if fold_details:
+                for fold_idx, fold_metrics in enumerate(fold_details, 1):
+                    composite_score = fold_metrics.get('composite_score', fold_metrics.get('r2', 0))
+                    
+                    rows.append({
+                        'dataset': dataset,
+                        'fold': fold_idx,
+                        'algorithm': algorithm,
+                        'score': composite_score,
+                        'params': best_params
+                    })
+            else:
+                # Fallback to aggregate score if fold details not available
+                rows.append({
+                    'dataset': dataset,
+                    'fold': 1,  # Default fold
+                    'algorithm': algorithm,
+                    'score': result['best_score'],
+                    'params': best_params
+                })
+        
+        # For each dataset-fold combination, find the best algorithm and its params
+        fold_level_df = pd.DataFrame(rows)
+        
+        if fold_level_df.empty:
+            return pd.DataFrame()
+        
+        # Group by dataset and fold, find best algorithm for each
+        best_per_fold = fold_level_df.loc[fold_level_df.groupby(['dataset', 'fold'])['score'].idxmax()]
         
         # Collect all hyperparameter names
         all_param_names = set()
-        for info in dataset_best.values():
-            all_param_names.update(info['params'].keys())
+        for _, row in best_per_fold.iterrows():
+            all_param_names.update(row['params'].keys())
         
-        rows = []
-        for dataset, info in dataset_best.items():
-            row = {'dataset': dataset}
+        # Prepare hyperparameter targets
+        hp_rows = []
+        for _, row in best_per_fold.iterrows():
+            hp_row = {
+                'dataset': row['dataset'],
+                'fold': row['fold'],
+                'dataset_fold': f"{row['dataset']}_fold_{row['fold']}"
+            }
             
             for param_name in all_param_names:
-                if param_name in info['params']:
-                    param_value = info['params'][param_name]
+                if param_name in row['params']:
+                    param_value = row['params'][param_name]
                     if isinstance(param_value, (int, float)):
-                        row[f'hp_{param_name}'] = float(param_value)
+                        hp_row[f'hp_{param_name}'] = float(param_value)
                     else:
                         # Handle categorical parameters
                         if param_name not in self.hyperparameter_mappings:
                             self.hyperparameter_mappings[param_name] = LabelEncoder()
                         
                         # For now, assign a simple encoding
-                        row[f'hp_{param_name}'] = hash(str(param_value)) % 100  # Simple hash encoding
+                        hp_row[f'hp_{param_name}'] = hash(str(param_value)) % 100  # Simple hash encoding
                 else:
-                    row[f'hp_{param_name}'] = np.nan
+                    hp_row[f'hp_{param_name}'] = np.nan
             
-            rows.append(row)
+            hp_rows.append(hp_row)
         
-        return pd.DataFrame(rows)
+        return pd.DataFrame(hp_rows)
     
     def train_meta_model(self, X: np.ndarray, y_algorithm: np.ndarray, 
                         y_hyperparams: np.ndarray, hp_mask: np.ndarray):
@@ -832,6 +914,13 @@ def main():
         # Train model
         meta_automl.train_meta_model(X, y_algo, y_hp, hp_mask)
         print("✅ MLP training completed!")
+        
+        # Save the trained model
+        save_path = os.path.join(base_dir, "meta_learning_model")
+        if meta_automl.save_model(save_path):
+            print(f"✅ Meta-learning model saved to {save_path}")
+        else:
+            print("❌ Failed to save meta-learning model")
         
         # Test predictions on all samples
         if meta_automl.model is not None:

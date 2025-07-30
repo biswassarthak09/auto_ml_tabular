@@ -253,8 +253,8 @@ class AutoMLTestPipeline:
             try:
                 prediction = self.meta_learner.predict_for_new_dataset(
                     dataset_name,
-                    data_dir="temp",  # Temporary
-                    original_data_dir="temp"
+                    data_dir="data_engineered_autofeat",  # Use actual engineered data dir
+                    original_data_dir="data"  # Use actual original data dir
                 )
                 
                 if prediction:

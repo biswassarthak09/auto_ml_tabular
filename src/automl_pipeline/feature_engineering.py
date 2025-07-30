@@ -183,6 +183,12 @@ class FeatureEngineer:
         # Apply same column selection to test data (using current dataset's columns)
         X_test_processed = X_test_processed[self.selected_columns]
         
+        # Ensure DataFrames (not Series)
+        if isinstance(X_test_processed, pd.Series):
+            X_test_processed = X_test_processed.to_frame()
+        if isinstance(X_train_processed, pd.Series):
+            X_train_processed = X_train_processed.to_frame()
+        
         # 3. Normalize data
         X_train_processed = self.normalize_data(X_train_processed, is_first_fold)
         X_test_processed = self.normalize_data(X_test_processed, is_first_fold=False)
@@ -203,13 +209,13 @@ class FeatureEngineer:
         
         # Create or reuse AutoFeat model for each dataset
         if is_first_fold or self.autofeat_model is None:
-            logger.info("Creating MINIMAL AutoFeat model (feature selection only)...")
+            logger.info("Creating ENHANCED AutoFeat model with modest feature engineering...")
             self.autofeat_model = AutoFeatRegressor(
-                feateng_steps=0,                    # NO feature engineering steps - only selection
-                featsel_runs=3,                     # Only feature selection
-                max_gb=1,                           # Limit memory usage
+                feateng_steps=1,                    # Allow 1 step of feature engineering
+                featsel_runs=5,                     # More thorough feature selection
+                max_gb=2,                           # Slightly more memory for better features
                 n_jobs=1,                           # Single job to avoid memory issues
-                transformations=[],                 # NO transformations at all
+                transformations=["1/", "log", "abs", "sqrt"],  # Basic transformations
                 verbose=1
             )
             logger.info("Fitting AutoFeat on first fold of dataset...")
@@ -222,24 +228,28 @@ class FeatureEngineer:
         # Transform test data
         X_test_engineered = self.autofeat_model.transform(X_test)
         
-        # Convert to DataFrames
+        # Convert to DataFrames and ensure proper types
         if not isinstance(X_train_engineered, pd.DataFrame):
             X_train_engineered = pd.DataFrame(X_train_engineered, index=X_train.index)
         if not isinstance(X_test_engineered, pd.DataFrame):
             X_test_engineered = pd.DataFrame(X_test_engineered, index=X_test.index)
         
-        # CONSERVATIVE feature limiting to prevent overfitting
-        max_features = min(25, X_train_engineered.shape[1])  # Reduced from 50 to 25
-        if X_train_engineered.shape[1] > max_features:
+        # Ensure we return DataFrames (force conversion if needed)
+        X_train_final = pd.DataFrame(X_train_engineered)
+        X_test_final = pd.DataFrame(X_test_engineered)
+        
+        # ENHANCED feature limiting - allow more features for better performance
+        max_features = min(50, X_train_final.shape[1])  # Increased from 25 to 50
+        if X_train_final.shape[1] > max_features:
             # Keep only the first max_features (AutoFeat orders by importance)
-            X_train_engineered = X_train_engineered.iloc[:, :max_features]
-            X_test_engineered = X_test_engineered.iloc[:, :max_features]
-            logger.info(f"LIMITED features to {max_features} to prevent overfitting")
+            X_train_final = pd.DataFrame(X_train_final.iloc[:, :max_features])
+            X_test_final = pd.DataFrame(X_test_final.iloc[:, :max_features])
+            logger.info(f"LIMITED features to {max_features} for optimal performance")
         
         logger.info(f"Original features: {X_train.shape[1]}")
-        logger.info(f"Engineered features: {X_train_engineered.shape[1]}")
+        logger.info(f"Engineered features: {X_train_final.shape[1]}")
         
-        return X_train_engineered, X_test_engineered
+        return X_train_final, X_test_final
     
     def save_engineered_data(self, X_train: pd.DataFrame, X_test: pd.DataFrame,
                            y_train: pd.Series, y_test: pd.Series,
