@@ -808,7 +808,7 @@ def main():
     
     # Configuration - Use absolute paths
     import os
-    base_dir = "/Users/sarthakbiswas/Documents/automl/auto_ml_tabular"
+    base_dir = "C:\Users\ahker\Desktop\University\auto_ml\auto_ml_tabular"
     NAS_HPO_RESULTS_DIR = os.path.join(base_dir, "nas_hpo_results")
     ORIGINAL_DATA_DIR = os.path.join(base_dir, "data")
     FE_DATA_DIR = os.path.join(base_dir, "data_engineered_autofeat")

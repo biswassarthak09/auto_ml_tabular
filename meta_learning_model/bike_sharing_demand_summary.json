@@ -1,0 +1,316 @@
+{
+  "dataset": "bike_sharing_demand",
+  "total_folds": 10,
+  "average_metrics": {
+    "avg_mse": 17977.24568653391,
+    "std_mse": 1887.2234231565944,
+    "avg_mae": 97.52802568199655,
+    "std_mae": 3.9329583674790807,
+    "avg_r2_score": 0.4514743552526624,
+    "std_r2_score": 0.036639584510504815,
+    "avg_rmse": 133.8973473597412,
+    "std_rmse": 6.981837620477877
+  },
+  "all_results": [
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 1,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 17909.699751437267,
+        "mae": 100.34277468289507,
+        "r2_score": 0.44320676718724905,
+        "rmse": 133.82712636620897
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_1_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 2,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 15011.211495305812,
+        "mae": 89.28779385148191,
+        "r2_score": 0.4735848746806933,
+        "rmse": 122.52024932763487
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_2_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 3,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 17022.251153322304,
+        "mae": 94.88547728034527,
+        "r2_score": 0.4599668707691682,
+        "rmse": 130.4693494784208
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_3_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 4,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 17201.585145376077,
+        "mae": 98.56947226848328,
+        "r2_score": 0.4975071136942124,
+        "rmse": 131.15481365689968
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_4_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 5,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 15888.666545978487,
+        "mae": 93.33258555915563,
+        "r2_score": 0.516228970442629,
+        "rmse": 126.05025404963882
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_5_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 6,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 21593.349814063018,
+        "mae": 100.89822982012957,
+        "r2_score": 0.40406792761898136,
+        "rmse": 146.94675843332857
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_6_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 7,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 20630.536821598515,
+        "mae": 101.86228778063635,
+        "r2_score": 0.396779375147415,
+        "rmse": 143.6333416084111
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_7_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 8,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 18023.8411718082,
+        "mae": 99.27546875425753,
+        "r2_score": 0.4338963265490028,
+        "rmse": 134.2529000498991
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_8_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 9,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 18827.01396563942,
+        "mae": 101.44818441793586,
+        "r2_score": 0.4653051080961025,
+        "rmse": 137.21156644262692
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_9_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 10,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 17664.301000809992,
+        "mae": 95.377982404645,
+        "r2_score": 0.4242002183411697,
+        "rmse": 132.90711418434302
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_10_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    }
+  ]
+}

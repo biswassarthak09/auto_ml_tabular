@@ -1,0 +1,43 @@
+{
+  "dataset": "yprop_4_1",
+  "total_folds": 1,
+  "average_metrics": {
+    "avg_mse": 0.0007144544229812967,
+    "std_mse": 0.0,
+    "avg_mae": 0.01945044315735707,
+    "std_mae": 0.0,
+    "avg_r2_score": 0.027883668210353485,
+    "std_r2_score": 0.0,
+    "avg_rmse": 0.02672928025557921,
+    "std_rmse": 0.0
+  },
+  "all_results": [
+    {
+      "dataset": "yprop_4_1",
+      "fold": 1,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 361,
+        "max_depth": 10,
+        "min_samples_split": 20,
+        "min_samples_leaf": 4,
+        "max_features": "sqrt"
+      },
+      "metrics": {
+        "mse": 0.0007144544229812967,
+        "mae": 0.01945044315735707,
+        "r2_score": 0.027883668210353485,
+        "rmse": 0.02672928025557921
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\yprop_4_1_fold_1_model.joblib",
+      "train_shape": [
+        7196,
+        25
+      ],
+      "test_shape": [
+        800,
+        25
+      ]
+    }
+  ]
+}

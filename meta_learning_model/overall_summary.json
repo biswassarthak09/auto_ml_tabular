@@ -1,0 +1,1189 @@
+{
+  "bike_sharing_demand": [
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 1,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 17909.699751437267,
+        "mae": 100.34277468289507,
+        "r2_score": 0.44320676718724905,
+        "rmse": 133.82712636620897
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_1_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 2,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 15011.211495305812,
+        "mae": 89.28779385148191,
+        "r2_score": 0.4735848746806933,
+        "rmse": 122.52024932763487
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_2_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 3,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 17022.251153322304,
+        "mae": 94.88547728034527,
+        "r2_score": 0.4599668707691682,
+        "rmse": 130.4693494784208
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_3_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 4,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 17201.585145376077,
+        "mae": 98.56947226848328,
+        "r2_score": 0.4975071136942124,
+        "rmse": 131.15481365689968
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_4_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 5,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 15888.666545978487,
+        "mae": 93.33258555915563,
+        "r2_score": 0.516228970442629,
+        "rmse": 126.05025404963882
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_5_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 6,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 21593.349814063018,
+        "mae": 100.89822982012957,
+        "r2_score": 0.40406792761898136,
+        "rmse": 146.94675843332857
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_6_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 7,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 20630.536821598515,
+        "mae": 101.86228778063635,
+        "r2_score": 0.396779375147415,
+        "rmse": 143.6333416084111
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_7_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 8,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 18023.8411718082,
+        "mae": 99.27546875425753,
+        "r2_score": 0.4338963265490028,
+        "rmse": 134.2529000498991
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_8_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 9,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 18827.01396563942,
+        "mae": 101.44818441793586,
+        "r2_score": 0.4653051080961025,
+        "rmse": 137.21156644262692
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_9_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    },
+    {
+      "dataset": "bike_sharing_demand",
+      "fold": 10,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 2,
+        "layer_0_size": 289,
+        "layer_1_size": 439,
+        "activation": "tanh",
+        "learning_rate": 0.0019725635225728193,
+        "batch_size": 32,
+        "max_iter": 461,
+        "alpha": 0.0009037621751411429
+      },
+      "metrics": {
+        "mse": 17664.301000809992,
+        "mae": 95.377982404645,
+        "r2_score": 0.4242002183411697,
+        "rmse": 132.90711418434302
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\bike_sharing_demand_fold_10_model.joblib",
+      "train_shape": [
+        7038,
+        11
+      ],
+      "test_shape": [
+        782,
+        11
+      ]
+    }
+  ],
+  "brazilian_houses": [
+    {
+      "dataset": "brazilian_houses",
+      "fold": 1,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.1891628758146236,
+        "mae": 0.21774977011348157,
+        "r2_score": 0.6979315066421672,
+        "rmse": 0.4349285870285185
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_1_model.joblib",
+      "train_shape": [
+        4329,
+        11
+      ],
+      "test_shape": [
+        482,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 2,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.18586953557548824,
+        "mae": 0.2928126279224434,
+        "r2_score": 0.7013959909900043,
+        "rmse": 0.43112589295412107
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_2_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 3,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.30094436311592154,
+        "mae": 0.37123884128706364,
+        "r2_score": 0.5160413712363912,
+        "rmse": 0.5485839617742406
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_3_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 4,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.20058967100184266,
+        "mae": 0.2953344138913073,
+        "r2_score": 0.6716887557528364,
+        "rmse": 0.44787238249510614
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_4_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 5,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.08045200381777588,
+        "mae": 0.18156734829810844,
+        "r2_score": 0.8828327533217071,
+        "rmse": 0.2836406244136687
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_5_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 6,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.11627083604421615,
+        "mae": 0.17398202046459824,
+        "r2_score": 0.8314188427655976,
+        "rmse": 0.3409850965133464
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_6_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 7,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.3666757887267227,
+        "mae": 0.4088266167769686,
+        "r2_score": 0.3606811986256969,
+        "rmse": 0.6055376030658399
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_7_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 8,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.16546105948398657,
+        "mae": 0.2834410552496883,
+        "r2_score": 0.7495380546998602,
+        "rmse": 0.4067690493191272
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_8_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 9,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.20641838031653376,
+        "mae": 0.29520831316957613,
+        "r2_score": 0.6641552877105957,
+        "rmse": 0.454332895921629
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_9_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 10,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.15653413132286298,
+        "mae": 0.272790630741765,
+        "r2_score": 0.7650219660449935,
+        "rmse": 0.3956439451361072
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_10_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    }
+  ],
+  "superconductivity": [
+    {
+      "dataset": "superconductivity",
+      "fold": 1,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 355.7630588239463,
+        "mae": 13.031099029082712,
+        "r2_score": 0.6870798575165,
+        "rmse": 18.861682290398868
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_1_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 2,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 246.3347973275354,
+        "mae": 11.156122065602261,
+        "r2_score": 0.7859359932055014,
+        "rmse": 15.695056461431905
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_2_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 3,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 358.9030422814241,
+        "mae": 13.28092174943613,
+        "r2_score": 0.6836856868153194,
+        "rmse": 18.944736532383452
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_3_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 4,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 299.9155162226381,
+        "mae": 11.977563523696409,
+        "r2_score": 0.7460906047956528,
+        "rmse": 17.318069067382716
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_4_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 5,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 282.8410233589794,
+        "mae": 11.649325315395522,
+        "r2_score": 0.7472989383347498,
+        "rmse": 16.8178780872909
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_5_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 6,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 230.34647327409562,
+        "mae": 10.907182300236586,
+        "r2_score": 0.7927945696590775,
+        "rmse": 15.17716947504032
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_6_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 7,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 264.8239648479742,
+        "mae": 11.58180958416399,
+        "r2_score": 0.7882558846259696,
+        "rmse": 16.273412821162445
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_7_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 8,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 302.761584258475,
+        "mae": 12.62299638806584,
+        "r2_score": 0.7328087783002217,
+        "rmse": 17.40004552460927
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_8_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 9,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 424.52096019210666,
+        "mae": 14.00763851020268,
+        "r2_score": 0.6447686721392465,
+        "rmse": 20.603906430386125
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_9_model.joblib",
+      "train_shape": [
+        8612,
+        25
+      ],
+      "test_shape": [
+        956,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 10,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 317.0728545071893,
+        "mae": 12.229250886048463,
+        "r2_score": 0.7283664399303948,
+        "rmse": 17.806539655620607
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_10_model.joblib",
+      "train_shape": [
+        8612,
+        25
+      ],
+      "test_shape": [
+        956,
+        25
+      ]
+    }
+  ],
+  "wine_quality": [
+    {
+      "dataset": "wine_quality",
+      "fold": 1,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.4607975154396316,
+        "mae": 0.5189435504146034,
+        "r2_score": 0.40883919816643877,
+        "rmse": 0.6788206798850721
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_1_model.joblib",
+      "train_shape": [
+        3946,
+        12
+      ],
+      "test_shape": [
+        439,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 2,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.4495160423975476,
+        "mae": 0.522147272735238,
+        "r2_score": 0.42331228976516233,
+        "rmse": 0.6704595755133546
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_2_model.joblib",
+      "train_shape": [
+        3946,
+        12
+      ],
+      "test_shape": [
+        439,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 3,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.5034928526088703,
+        "mae": 0.5405403505022743,
+        "r2_score": 0.3540650101341075,
+        "rmse": 0.709572302594225
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_3_model.joblib",
+      "train_shape": [
+        3946,
+        12
+      ],
+      "test_shape": [
+        439,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 4,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.5066364398465489,
+        "mae": 0.5432073073346281,
+        "r2_score": 0.3525405073892819,
+        "rmse": 0.711783983977266
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_4_model.joblib",
+      "train_shape": [
+        3946,
+        12
+      ],
+      "test_shape": [
+        439,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 5,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.46041629501684966,
+        "mae": 0.5032526781893908,
+        "r2_score": 0.4150291471069032,
+        "rmse": 0.6785398256674767
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_5_model.joblib",
+      "train_shape": [
+        3946,
+        12
+      ],
+      "test_shape": [
+        439,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 6,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.4721312802031282,
+        "mae": 0.5243013464173453,
+        "r2_score": 0.38355881034696804,
+        "rmse": 0.6871180977118331
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_6_model.joblib",
+      "train_shape": [
+        3947,
+        12
+      ],
+      "test_shape": [
+        438,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 7,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.49505659054701473,
+        "mae": 0.5426490583792523,
+        "r2_score": 0.35362623401889637,
+        "rmse": 0.703602579974672
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_7_model.joblib",
+      "train_shape": [
+        3947,
+        12
+      ],
+      "test_shape": [
+        438,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 8,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.4600214673402848,
+        "mae": 0.5382799589143563,
+        "r2_score": 0.3908126764150397,
+        "rmse": 0.6782488240611146
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_8_model.joblib",
+      "train_shape": [
+        3947,
+        12
+      ],
+      "test_shape": [
+        438,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 9,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.42117564733807655,
+        "mae": 0.5012803758081286,
+        "r2_score": 0.4499658210488363,
+        "rmse": 0.6489804676090618
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_9_model.joblib",
+      "train_shape": [
+        3947,
+        12
+      ],
+      "test_shape": [
+        438,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 10,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.5128796249094161,
+        "mae": 0.5550084055121954,
+        "r2_score": 0.3302050458739142,
+        "rmse": 0.7161561456200848
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_10_model.joblib",
+      "train_shape": [
+        3947,
+        12
+      ],
+      "test_shape": [
+        438,
+        12
+      ]
+    }
+  ],
+  "yprop_4_1": [
+    {
+      "dataset": "yprop_4_1",
+      "fold": 1,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 361,
+        "max_depth": 10,
+        "min_samples_split": 20,
+        "min_samples_leaf": 4,
+        "max_features": "sqrt"
+      },
+      "metrics": {
+        "mse": 0.0007144544229812967,
+        "mae": 0.01945044315735707,
+        "r2_score": 0.027883668210353485,
+        "rmse": 0.02672928025557921
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\yprop_4_1_fold_1_model.joblib",
+      "train_shape": [
+        7196,
+        25
+      ],
+      "test_shape": [
+        800,
+        25
+      ]
+    }
+  ]
+}

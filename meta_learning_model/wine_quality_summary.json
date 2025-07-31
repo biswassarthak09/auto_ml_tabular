@@ -1,0 +1,286 @@
+{
+  "dataset": "wine_quality",
+  "total_folds": 10,
+  "average_metrics": {
+    "avg_mse": 0.47421237556473683,
+    "std_mse": 0.027994839360650774,
+    "avg_mae": 0.5289610304207413,
+    "std_mae": 0.016986274503228503,
+    "avg_r2_score": 0.38619547402655485,
+    "std_r2_score": 0.03630070467372677,
+    "avg_rmse": 0.688328248261416,
+    "std_rmse": 0.02041073761791105
+  },
+  "all_results": [
+    {
+      "dataset": "wine_quality",
+      "fold": 1,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.4607975154396316,
+        "mae": 0.5189435504146034,
+        "r2_score": 0.40883919816643877,
+        "rmse": 0.6788206798850721
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_1_model.joblib",
+      "train_shape": [
+        3946,
+        12
+      ],
+      "test_shape": [
+        439,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 2,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.4495160423975476,
+        "mae": 0.522147272735238,
+        "r2_score": 0.42331228976516233,
+        "rmse": 0.6704595755133546
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_2_model.joblib",
+      "train_shape": [
+        3946,
+        12
+      ],
+      "test_shape": [
+        439,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 3,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.5034928526088703,
+        "mae": 0.5405403505022743,
+        "r2_score": 0.3540650101341075,
+        "rmse": 0.709572302594225
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_3_model.joblib",
+      "train_shape": [
+        3946,
+        12
+      ],
+      "test_shape": [
+        439,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 4,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.5066364398465489,
+        "mae": 0.5432073073346281,
+        "r2_score": 0.3525405073892819,
+        "rmse": 0.711783983977266
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_4_model.joblib",
+      "train_shape": [
+        3946,
+        12
+      ],
+      "test_shape": [
+        439,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 5,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.46041629501684966,
+        "mae": 0.5032526781893908,
+        "r2_score": 0.4150291471069032,
+        "rmse": 0.6785398256674767
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_5_model.joblib",
+      "train_shape": [
+        3946,
+        12
+      ],
+      "test_shape": [
+        439,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 6,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.4721312802031282,
+        "mae": 0.5243013464173453,
+        "r2_score": 0.38355881034696804,
+        "rmse": 0.6871180977118331
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_6_model.joblib",
+      "train_shape": [
+        3947,
+        12
+      ],
+      "test_shape": [
+        438,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 7,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.49505659054701473,
+        "mae": 0.5426490583792523,
+        "r2_score": 0.35362623401889637,
+        "rmse": 0.703602579974672
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_7_model.joblib",
+      "train_shape": [
+        3947,
+        12
+      ],
+      "test_shape": [
+        438,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 8,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.4600214673402848,
+        "mae": 0.5382799589143563,
+        "r2_score": 0.3908126764150397,
+        "rmse": 0.6782488240611146
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_8_model.joblib",
+      "train_shape": [
+        3947,
+        12
+      ],
+      "test_shape": [
+        438,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 9,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.42117564733807655,
+        "mae": 0.5012803758081286,
+        "r2_score": 0.4499658210488363,
+        "rmse": 0.6489804676090618
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_9_model.joblib",
+      "train_shape": [
+        3947,
+        12
+      ],
+      "test_shape": [
+        438,
+        12
+      ]
+    },
+    {
+      "dataset": "wine_quality",
+      "fold": 10,
+      "algorithm": "random_forest",
+      "hyperparams": {
+        "n_estimators": 140,
+        "max_depth": 18,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "log2"
+      },
+      "metrics": {
+        "mse": 0.5128796249094161,
+        "mae": 0.5550084055121954,
+        "r2_score": 0.3302050458739142,
+        "rmse": 0.7161561456200848
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\wine_quality_fold_10_model.joblib",
+      "train_shape": [
+        3947,
+        12
+      ],
+      "test_shape": [
+        438,
+        12
+      ]
+    }
+  ]
+}

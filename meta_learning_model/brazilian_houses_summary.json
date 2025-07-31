@@ -1,0 +1,336 @@
+{
+  "dataset": "brazilian_houses",
+  "total_folds": 10,
+  "average_metrics": {
+    "avg_mse": 0.19683786452199742,
+    "std_mse": 0.07912886011293722,
+    "avg_mae": 0.2792951637915001,
+    "std_mae": 0.07100293076699209,
+    "avg_r2_score": 0.6840705727789851,
+    "std_r2_score": 0.1434969546036364,
+    "avg_rmse": 0.4349420038621704,
+    "std_rmse": 0.08754037810266235
+  },
+  "all_results": [
+    {
+      "dataset": "brazilian_houses",
+      "fold": 1,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.1891628758146236,
+        "mae": 0.21774977011348157,
+        "r2_score": 0.6979315066421672,
+        "rmse": 0.4349285870285185
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_1_model.joblib",
+      "train_shape": [
+        4329,
+        11
+      ],
+      "test_shape": [
+        482,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 2,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.18586953557548824,
+        "mae": 0.2928126279224434,
+        "r2_score": 0.7013959909900043,
+        "rmse": 0.43112589295412107
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_2_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 3,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.30094436311592154,
+        "mae": 0.37123884128706364,
+        "r2_score": 0.5160413712363912,
+        "rmse": 0.5485839617742406
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_3_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 4,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.20058967100184266,
+        "mae": 0.2953344138913073,
+        "r2_score": 0.6716887557528364,
+        "rmse": 0.44787238249510614
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_4_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 5,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.08045200381777588,
+        "mae": 0.18156734829810844,
+        "r2_score": 0.8828327533217071,
+        "rmse": 0.2836406244136687
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_5_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 6,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.11627083604421615,
+        "mae": 0.17398202046459824,
+        "r2_score": 0.8314188427655976,
+        "rmse": 0.3409850965133464
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_6_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 7,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.3666757887267227,
+        "mae": 0.4088266167769686,
+        "r2_score": 0.3606811986256969,
+        "rmse": 0.6055376030658399
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_7_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 8,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.16546105948398657,
+        "mae": 0.2834410552496883,
+        "r2_score": 0.7495380546998602,
+        "rmse": 0.4067690493191272
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_8_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 9,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.20641838031653376,
+        "mae": 0.29520831316957613,
+        "r2_score": 0.6641552877105957,
+        "rmse": 0.454332895921629
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_9_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    },
+    {
+      "dataset": "brazilian_houses",
+      "fold": 10,
+      "algorithm": "mlp",
+      "hyperparams": {
+        "n_layers": 4,
+        "layer_0_size": 71,
+        "layer_1_size": 161,
+        "layer_2_size": 441,
+        "layer_3_size": 113,
+        "activation": "relu",
+        "learning_rate": 0.005243469979106869,
+        "batch_size": 32,
+        "max_iter": 251,
+        "alpha": 0.004906553548543233
+      },
+      "metrics": {
+        "mse": 0.15653413132286298,
+        "mae": 0.272790630741765,
+        "r2_score": 0.7650219660449935,
+        "rmse": 0.3956439451361072
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\brazilian_houses_fold_10_model.joblib",
+      "train_shape": [
+        4330,
+        11
+      ],
+      "test_shape": [
+        481,
+        11
+      ]
+    }
+  ]
+}

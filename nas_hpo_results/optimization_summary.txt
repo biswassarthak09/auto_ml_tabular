@@ -1,0 +1,119 @@
+=== NAS-HPO Optimization Summary ===
+
+
+Dataset: bike_sharing_demand
+--------------------------------------------------
+1. mlp: 0.6401 (R²: 0.6401, MSE: 11765.1699, MAE: 75.2616)
+2. knn: 0.5683 (R²: 0.5683, MSE: 14103.3936, MAE: 84.1379)
+3. random_forest: 0.4908 (R²: 0.4908, MSE: 16701.9980, MAE: 91.8231)
+4. gradient_boosting: 0.3380 (R²: 0.3380, MSE: 21700.6478, MAE: 104.3787)
+5. decision_tree: 0.3084 (R²: 0.3084, MSE: 22619.1805, MAE: 108.4128)
+6. ada_boost: 0.2728 (R²: 0.2728, MSE: 23785.0220, MAE: 122.7332)
+
+Best Algorithm: mlp
+Best Composite Score: 0.6401
+Best R²: 0.6401
+Best MSE: 11765.1699
+Best MAE: 75.2616
+Best Params: {
+  "n_layers": 2,
+  "layer_0_size": 289,
+  "layer_1_size": 439,
+  "activation": "tanh",
+  "learning_rate": 0.0019725635225728193,
+  "batch_size": 32,
+  "max_iter": 461,
+  "alpha": 0.0009037621751411429
+}
+
+Dataset: brazilian_houses
+--------------------------------------------------
+1. mlp: 0.8845 (R²: 0.8845, MSE: 0.0729, MAE: 0.1877)
+2. knn: 0.8314 (R²: 0.8314, MSE: 0.1083, MAE: 0.1894)
+3. decision_tree: 0.7531 (R²: 0.7531, MSE: 0.1572, MAE: 0.2571)
+4. gradient_boosting: 0.7461 (R²: 0.7461, MSE: 0.1580, MAE: 0.2385)
+5. random_forest: 0.7204 (R²: 0.7204, MSE: 0.1746, MAE: 0.2728)
+6. ada_boost: 0.5294 (R²: 0.5294, MSE: 0.2970, MAE: 0.4145)
+
+Best Algorithm: mlp
+Best Composite Score: 0.8845
+Best R²: 0.8845
+Best MSE: 0.0729
+Best MAE: 0.1877
+Best Params: {
+  "n_layers": 4,
+  "layer_0_size": 71,
+  "layer_1_size": 161,
+  "layer_2_size": 441,
+  "layer_3_size": 113,
+  "activation": "relu",
+  "learning_rate": 0.005243469979106869,
+  "batch_size": 32,
+  "max_iter": 251,
+  "alpha": 0.004906553548543233
+}
+
+Dataset: superconductivity
+--------------------------------------------------
+1. knn: 0.8739 (R²: 0.8739, MSE: 145.6559, MAE: 6.8874)
+2. mlp: 0.8607 (R²: 0.8607, MSE: 160.9552, MAE: 8.0838)
+3. random_forest: 0.7887 (R²: 0.7887, MSE: 244.4399, MAE: 10.5583)
+4. gradient_boosting: 0.5625 (R²: 0.5625, MSE: 507.2262, MAE: 15.3201)
+5. ada_boost: 0.5617 (R²: 0.5617, MSE: 507.7029, MAE: 17.6055)
+6. decision_tree: 0.3313 (R²: 0.3313, MSE: 773.9997, MAE: 15.9254)
+
+Best Algorithm: knn
+Best Composite Score: 0.8739
+Best R²: 0.8739
+Best MSE: 145.6559
+Best MAE: 6.8874
+Best Params: {
+  "n_neighbors": 4,
+  "weights": "distance",
+  "algorithm": "auto",
+  "p": 1
+}
+
+Dataset: wine_quality
+--------------------------------------------------
+1. random_forest: 0.3862 (R²: 0.3862, MSE: 0.4742, MAE: 0.5290)
+2. gradient_boosting: 0.3818 (R²: 0.3818, MSE: 0.4776, MAE: 0.5170)
+3. knn: 0.3693 (R²: 0.3693, MSE: 0.4873, MAE: 0.5299)
+4. mlp: 0.3005 (R²: 0.3005, MSE: 0.5405, MAE: 0.5744)
+5. ada_boost: 0.1906 (R²: 0.1906, MSE: 0.6253, MAE: 0.6294)
+6. decision_tree: 0.1745 (R²: 0.1745, MSE: 0.6381, MAE: 0.6303)
+
+Best Algorithm: random_forest
+Best Composite Score: 0.3862
+Best R²: 0.3862
+Best MSE: 0.4742
+Best MAE: 0.5290
+Best Params: {
+  "n_estimators": 140,
+  "max_depth": 18,
+  "min_samples_split": 2,
+  "min_samples_leaf": 1,
+  "max_features": "log2"
+}
+
+Dataset: yprop_4_1
+--------------------------------------------------
+1. random_forest: 0.0279 (R²: 0.0279, MSE: 0.0007, MAE: 0.0195)
+2. gradient_boosting: 0.0076 (R²: 0.0076, MSE: 0.0007, MAE: 0.0196)
+3. ada_boost: -0.0043 (R²: -0.0043, MSE: 0.0007, MAE: 0.0203)
+4. decision_tree: -0.0081 (R²: -0.0081, MSE: 0.0007, MAE: 0.0186)
+5. knn: -0.0128 (R²: -0.0128, MSE: 0.0007, MAE: 0.0200)
+6. mlp: -0.0448 (R²: -0.0448, MSE: 0.0008, MAE: 0.0195)
+
+Best Algorithm: random_forest
+Best Composite Score: 0.0279
+Best R²: 0.0279
+Best MSE: 0.0007
+Best MAE: 0.0195
+Best Params: {
+  "n_estimators": 361,
+  "max_depth": 10,
+  "min_samples_split": 20,
+  "min_samples_leaf": 4,
+  "max_features": "sqrt"
+}

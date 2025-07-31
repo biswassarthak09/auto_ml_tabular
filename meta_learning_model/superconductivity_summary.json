@@ -1,0 +1,276 @@
+{
+  "dataset": "superconductivity",
+  "total_folds": 10,
+  "average_metrics": {
+    "avg_mse": 308.32832750943635,
+    "std_mse": 55.63579225039899,
+    "avg_mae": 12.244390935193058,
+    "std_mae": 0.9371600261813576,
+    "avg_r2_score": 0.7337085425322634,
+    "std_r2_score": 0.047062151035298955,
+    "avg_rmse": 17.48984963457066,
+    "std_rmse": 1.559963868025459
+  },
+  "all_results": [
+    {
+      "dataset": "superconductivity",
+      "fold": 1,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 355.7630588239463,
+        "mae": 13.031099029082712,
+        "r2_score": 0.6870798575165,
+        "rmse": 18.861682290398868
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_1_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 2,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 246.3347973275354,
+        "mae": 11.156122065602261,
+        "r2_score": 0.7859359932055014,
+        "rmse": 15.695056461431905
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_2_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 3,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 358.9030422814241,
+        "mae": 13.28092174943613,
+        "r2_score": 0.6836856868153194,
+        "rmse": 18.944736532383452
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_3_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 4,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 299.9155162226381,
+        "mae": 11.977563523696409,
+        "r2_score": 0.7460906047956528,
+        "rmse": 17.318069067382716
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_4_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 5,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 282.8410233589794,
+        "mae": 11.649325315395522,
+        "r2_score": 0.7472989383347498,
+        "rmse": 16.8178780872909
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_5_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 6,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 230.34647327409562,
+        "mae": 10.907182300236586,
+        "r2_score": 0.7927945696590775,
+        "rmse": 15.17716947504032
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_6_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 7,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 264.8239648479742,
+        "mae": 11.58180958416399,
+        "r2_score": 0.7882558846259696,
+        "rmse": 16.273412821162445
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_7_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 8,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 302.761584258475,
+        "mae": 12.62299638806584,
+        "r2_score": 0.7328087783002217,
+        "rmse": 17.40004552460927
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_8_model.joblib",
+      "train_shape": [
+        8611,
+        25
+      ],
+      "test_shape": [
+        957,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 9,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 424.52096019210666,
+        "mae": 14.00763851020268,
+        "r2_score": 0.6447686721392465,
+        "rmse": 20.603906430386125
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_9_model.joblib",
+      "train_shape": [
+        8612,
+        25
+      ],
+      "test_shape": [
+        956,
+        25
+      ]
+    },
+    {
+      "dataset": "superconductivity",
+      "fold": 10,
+      "algorithm": "knn",
+      "hyperparams": {
+        "n_neighbors": 4,
+        "weights": "distance",
+        "algorithm": "auto",
+        "p": 1
+      },
+      "metrics": {
+        "mse": 317.0728545071893,
+        "mae": 12.229250886048463,
+        "r2_score": 0.7283664399303948,
+        "rmse": 17.806539655620607
+      },
+      "model_path": "C:\\Users\\ahker\\Desktop\\University\\auto_ml\\auto_ml_tabular\\meta_learning_model\\superconductivity_fold_10_model.joblib",
+      "train_shape": [
+        8612,
+        25
+      ],
+      "test_shape": [
+        956,
+        25
+      ]
+    }
+  ]
+}

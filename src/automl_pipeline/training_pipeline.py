@@ -33,6 +33,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+ROOT_DIR = Path(__file__).resolve().parents[2]
 def run_training_pipeline():
     """Execute the complete AutoML training pipeline"""
     
@@ -45,11 +46,11 @@ def run_training_pipeline():
     
     # Configuration
     config = {
-        'data_dir': 'data',
-        'engineered_data_dir': 'data_engineered_autofeat',
+        'data_dir': str(ROOT_DIR / 'data'),
+        'engineered_data_dir': str(ROOT_DIR / 'data_engineered_autofeat'),
         'nas_hpo_output_dir': 'nas_hpo_results',
-        'meta_learning_output_dir': 'meta_learning_model',
-        'final_models_output_dir': 'result/final_models',
+        'meta_learning_output_dir': str(ROOT_DIR / 'nas_hpo_results'),
+        'final_models_output_dir': str(ROOT_DIR / 'meta_learning_model'),
         'datasets': ['bike_sharing_demand', 'brazilian_houses', 'superconductivity', 'wine_quality', 'yprop_4_1']
     }
     
@@ -80,13 +81,13 @@ def run_training_pipeline():
     except Exception as e:
         logger.error(f"Feature engineering failed: {str(e)}")
         results['feature_engineering'] = f'FAILED: {str(e)}'
-        print("❌ Feature engineering failed - continuing with existing data...")
+        print("Feature engineering failed - continuing with existing data...")
     
     try:
         # ==========================================
         # STEP 2: NAS-HPO
         # ==========================================
-        print("\\n🔧 STEP 2: NAS-HPO OPTIMIZATION")
+        print("\\n STEP 2: NAS-HPO OPTIMIZATION")
         print("-" * 40)
         
         from nas_hpo_optuna import main as nas_hpo_main
@@ -102,13 +103,13 @@ def run_training_pipeline():
     except Exception as e:
         logger.error(f"NAS-HPO failed: {str(e)}")
         results['nas_hpo'] = f'FAILED: {str(e)}'
-        print("❌ NAS-HPO failed - will use default algorithms...")
+        print(" NAS-HPO failed - will use default algorithms...")
     
     try:
         # ==========================================
         # STEP 3: META-LEARNING
         # ==========================================
-        print("\\n🧠 STEP 3: META-LEARNING TRAINING")
+        print("\\n STEP 3: META-LEARNING TRAINING")
         print("-" * 40)
         
         from meta_learning import main as meta_learning_main
@@ -124,13 +125,13 @@ def run_training_pipeline():
     except Exception as e:
         logger.error(f"Meta-learning failed: {str(e)}")
         results['meta_learning'] = f'FAILED: {str(e)}'
-        print("❌ Meta-learning failed - will use NAS-HPO results directly...")
+        print("Meta-learning failed - will use NAS-HPO results directly...")
     
     try:
         # ==========================================
         # STEP 4: FINAL MODEL TRAINING & EVALUATION
         # ==========================================
-        print("\\n🎯 STEP 4: FINAL MODEL TRAINING & EVALUATION")
+        print("\\n STEP 4: FINAL MODEL TRAINING & EVALUATION")
         print("-" * 40)
         
         from final_model_trainer import FinalModelTrainer
@@ -147,14 +148,14 @@ def run_training_pipeline():
         # Train and evaluate all datasets
         evaluation_results = final_trainer.train_and_evaluate_all_datasets()
         
-        print("✅ Final model training completed")
+        print("Final model training completed")
         results['final_training'] = 'SUCCESS'
         results['evaluation_results'] = evaluation_results
         
         # ==========================================
         # PERFORMANCE SUMMARY
         # ==========================================
-        print("\\n📊 PERFORMANCE SUMMARY")
+        print("\\n PERFORMANCE SUMMARY")
         print("=" * 60)
         
         reference_scores = {
@@ -215,7 +216,7 @@ def run_training_pipeline():
     except Exception as e:
         logger.error(f"Final training failed: {str(e)}")
         results['final_training'] = f'FAILED: {str(e)}'
-        print("❌ Final training failed")
+        print("Final training failed")
     
     # ==========================================
     # PIPELINE SUMMARY
@@ -224,7 +225,7 @@ def run_training_pipeline():
     duration = end_time - start_time
     
     print("\\n" + "=" * 60)
-    print("🎯 TRAINING PIPELINE SUMMARY")
+    print(" TRAINING PIPELINE SUMMARY")
     print("=" * 60)
     
     for step, status in results.items():
@@ -242,8 +243,8 @@ def run_training_pipeline():
     with open('training_pipeline_results.json', 'w') as f:
         json.dump(results, f, indent=2, default=str)
     
-    print(f"\\n📄 Results saved to: training_pipeline_results.json")
-    print("🎉 Training pipeline completed!")
+    print(f"\\n Results saved to: training_pipeline_results.json")
+    print("Training pipeline completed!")
     
     return results
 
