@@ -35,7 +35,7 @@ except ImportError:
 
 try:
     # Import PyTorch MLP from nas_hpo_optuna
-    from .nas_hpo_optuna import PyTorchMLP, PYTORCH_AVAILABLE
+    from nas_hpo_optuna import PyTorchMLP, PYTORCH_AVAILABLE
 except ImportError:
     PyTorchMLP = None
     PYTORCH_AVAILABLE = False
@@ -50,14 +50,14 @@ class FinalModelTrainer:
     This class trains models on x_train/y_train and predicts y on x_test.
     """
     
-    def __init__(self, data_dir: str, output_dir: str, meta_learning_model_dir: Optional[str] = None):
+    def __init__(self, data_dir: str, output_dir: str, meta_learning_model_dir: str):
         """
         Initialize Final Model Trainer
         
         Args:
             data_dir: Directory containing engineered features
             output_dir: Directory to save final model and results
-            meta_learning_model_dir: Directory containing trained meta-learning model
+            meta_learning_model_dir: Directory containing trained meta-learning model (REQUIRED)
         """
         self.data_dir = Path(data_dir)
         self.output_dir = Path(output_dir)
@@ -83,11 +83,11 @@ class FinalModelTrainer:
         }
         
         # Add GPU-accelerated algorithms if available
-        if XGBOOST_AVAILABLE:
+        if XGBOOST_AVAILABLE and xgb is not None:
             self.algorithm_map['xgboost'] = xgb.XGBRegressor
             logger.info("✅ XGBoost available for final model training")
             
-        if LIGHTGBM_AVAILABLE:
+        if LIGHTGBM_AVAILABLE and lgb is not None:
             self.algorithm_map['lightgbm'] = lgb.LGBMRegressor
             logger.info("✅ LightGBM available for final model training")
             
@@ -97,112 +97,138 @@ class FinalModelTrainer:
         
         logger.info(f"📋 Total algorithms available for final training: {len(self.algorithm_map)}")
         
-        # Load meta-learning model if available
+        # Load meta-learning model (MANDATORY - no fallbacks)
         self.meta_model = None
-        if meta_learning_model_dir:
-            self.load_meta_learning_model()
+        if not meta_learning_model_dir:
+            raise ValueError("meta_learning_model_dir is required! Final model trainer requires meta-learning predictions.")
+        
+        # Store the directory path (now guaranteed to be not None)
+        self.meta_learning_model_dir = meta_learning_model_dir
+        
+        self.load_meta_learning_model()
+        
+        if not hasattr(self, 'meta_model') or not self.meta_model:
+            raise RuntimeError("Failed to load meta-learning model! Cannot proceed without meta-learning predictions.")
     
     def load_meta_learning_model(self):
-        """Load the trained meta-learning model"""
-        try:
-            if self.meta_learning_model_dir is None:
-                logger.warning("No meta-learning model directory provided")
-                return
-                
-            logger.info(f"Attempting to load meta-learning model from {self.meta_learning_model_dir}")
-            
-            # Try to import and load the meta-learning model
-            try:
-                from .meta_learning import AdvancedMetaLearningAutoML
-                self.meta_model = AdvancedMetaLearningAutoML(self.meta_learning_model_dir)
-                
-                # Load the trained model
-                if self.meta_model.load_model(self.meta_learning_model_dir):
-                    logger.info("Meta-learning model loaded successfully")
-                else:
-                    logger.warning("Failed to load meta-learning model weights")
-                    self.meta_model = None
-            except ImportError:
-                logger.warning("meta_learning module not found")
-                self.meta_model = None
-                
-        except Exception as e:
-            logger.warning(f"Could not load meta-learning model: {str(e)}")
+        """Load the trained meta-learning model - MANDATORY"""
+        logger.info(f"Loading meta-learning model from {self.meta_learning_model_dir}")
+        
+        # Import meta-learning model
+        from meta_learning import AdvancedMetaLearningAutoML
+        self.meta_model = AdvancedMetaLearningAutoML(self.meta_learning_model_dir)
+        
+        # Load the trained model
+        if not self.meta_model.load_model(self.meta_learning_model_dir):
+            raise RuntimeError(f"Failed to load meta-learning model from {self.meta_learning_model_dir}")
+        
+        logger.info("✅ Meta-learning model loaded successfully")
     
     def get_algorithm_prediction(self, dataset_name: str) -> Tuple[str, Dict[str, Any]]:
         """
-        Get algorithm and hyperparameter prediction for a dataset.
+        Get algorithm and hyperparameter prediction for a dataset using meta-learning model.
         
-        Uses meta-learning model prediction if available, otherwise falls back to NAS-HPO results.
+        This method ONLY uses the meta-learning model - no fallbacks.
         """
         
-        # First try meta-learning model prediction
-        if hasattr(self, 'meta_model') and self.meta_model:
-            try:
-                logger.info(f"Using meta-learning model for prediction on {dataset_name}")
-                prediction = self.meta_model.predict_for_new_dataset(
-                    dataset_name, 
-                    data_dir=str(self.data_dir),
-                    original_data_dir="data"
-                )
-                
-                if prediction:
-                    algorithm = prediction['algorithm']
-                    hyperparams = prediction['hyperparams']
-                    confidence = prediction['confidence']
-                    
-                    logger.info(f"Meta-learning prediction for {dataset_name}: {algorithm} (confidence: {confidence:.3f})")
-                    return algorithm, hyperparams
+        # Use meta-learning model for prediction
+        if not hasattr(self, 'meta_model') or not self.meta_model:
+            raise RuntimeError("Meta-learning model not loaded! Cannot proceed without meta-learning predictions.")
+        
+        logger.info(f"Using meta-learning model for prediction on {dataset_name}")
+        
+        # Use absolute path for original data directory
+        original_data_dir = "/Users/sarthakbiswas/Documents/automl/auto_ml_tabular/data"
+        
+        prediction = self.meta_model.predict_for_new_dataset(
+            dataset_name, 
+            data_dir=str(self.data_dir),
+            original_data_dir=original_data_dir
+        )
+        
+        if not prediction:
+            raise RuntimeError(f"Meta-learning prediction failed for {dataset_name}. No fallback available.")
+        
+        algorithm = prediction['algorithm']
+        hyperparams = prediction['hyperparams']
+        confidence = prediction['confidence']
+        
+        # Apply hyperparameter constraints to prevent extreme values
+        hyperparams = self.constrain_hyperparameters(algorithm, hyperparams)
+        
+        logger.info(f"Meta-learning prediction for {dataset_name}: {algorithm} (confidence: {confidence:.3f})")
+        logger.info(f"Constrained hyperparameters: {hyperparams}")
+        
+        return algorithm, hyperparams
+    
+    def constrain_hyperparameters(self, algorithm: str, hyperparams: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Apply reasonable constraints to hyperparameters to prevent extreme values
+        that lead to excessive training time or poor performance.
+        """
+        constrained = hyperparams.copy()
+        
+        if algorithm == 'random_forest':
+            # Limit n_estimators to reasonable range
+            if 'n_estimators' in constrained:
+                original_n_est = constrained['n_estimators']
+                constrained['n_estimators'] = max(10, min(500, constrained['n_estimators']))
+                if original_n_est != constrained['n_estimators']:
+                    logger.info(f"Constrained n_estimators from {original_n_est} to {constrained['n_estimators']}")
+            
+            # Limit max_depth to prevent overfitting
+            if 'max_depth' in constrained:
+                constrained['max_depth'] = max(3, min(20, constrained['max_depth']))
+        
+        elif algorithm == 'gradient_boosting':
+            # Limit n_estimators
+            if 'n_estimators' in constrained:
+                original_n_est = constrained['n_estimators']
+                constrained['n_estimators'] = max(50, min(1000, constrained['n_estimators']))
+                if original_n_est != constrained['n_estimators']:
+                    logger.info(f"Constrained GB n_estimators from {original_n_est} to {constrained['n_estimators']}")
+            
+            # Ensure reasonable learning rate
+            if 'learning_rate' in constrained:
+                constrained['learning_rate'] = max(0.01, min(0.3, constrained['learning_rate']))
+        
+        elif algorithm == 'xgboost':
+            # Limit n_estimators
+            if 'n_estimators' in constrained:
+                constrained['n_estimators'] = max(50, min(1000, constrained['n_estimators']))
+            
+            # Ensure reasonable learning rate
+            if 'learning_rate' in constrained:
+                constrained['learning_rate'] = max(0.01, min(0.3, constrained['learning_rate']))
+        
+        elif algorithm == 'lightgbm':
+            # Limit n_estimators
+            if 'n_estimators' in constrained:
+                constrained['n_estimators'] = max(50, min(1000, constrained['n_estimators']))
+            
+            # Ensure reasonable learning rate
+            if 'learning_rate' in constrained:
+                constrained['learning_rate'] = max(0.01, min(0.3, constrained['learning_rate']))
+        
+        elif algorithm in ['mlp', 'neural_network']:
+            # Limit hidden layer sizes
+            if 'hidden_layer_sizes' in constrained:
+                if isinstance(constrained['hidden_layer_sizes'], (list, tuple)):
+                    # Limit each layer size
+                    constrained['hidden_layer_sizes'] = tuple(
+                        max(10, min(500, size)) for size in constrained['hidden_layer_sizes']
+                    )
                 else:
-                    logger.warning(f"Meta-learning prediction failed for {dataset_name}, falling back to NAS-HPO")
-            except Exception as e:
-                logger.warning(f"Error using meta-learning model: {str(e)}, falling back to NAS-HPO")
+                    # Single value
+                    constrained['hidden_layer_sizes'] = max(10, min(500, constrained['hidden_layer_sizes']))
         
-        # Fallback to NAS-HPO results
-        nas_results_file = Path("nas_hpo_results/all_optimization_results.json")
-        
-        if nas_results_file.exists():
-            try:
-                with open(nas_results_file, 'r') as f:
-                    nas_results = json.load(f)
-                
-                # Find best result for this dataset
-                dataset_results = [r for r in nas_results if r['dataset'] == dataset_name]
-                if dataset_results:
-                    best_result = max(dataset_results, key=lambda x: x['best_score'])
-                    algorithm = best_result['algorithm']
-                    hyperparams = best_result['best_params']
-                    
-                    logger.info(f"Using NAS-HPO best result for {dataset_name}: {algorithm}")
-                    return algorithm, hyperparams
-            except Exception as e:
-                logger.warning(f"Error reading NAS-HPO results: {str(e)}")
-        
-        # Final fallback to well-tuned Random Forest
-        logger.warning(f"No prediction found for {dataset_name}, using robust Random Forest fallback")
-        return 'random_forest', {
-            'n_estimators': 100, 
-            'max_depth': 10,
-            'min_samples_split': 5,
-            'max_features': 'sqrt',
-            'random_state': 42,
-            'n_jobs': -1
-        }
+        return constrained
     
     def create_model(self, algorithm: str, hyperparams: Dict[str, Any]):
-        """Create model instance with specified algorithm and hyperparameters"""
+        """Create model instance with specified algorithm and hyperparameters - NO FALLBACKS"""
         
         if algorithm not in self.algorithm_map:
-            logger.warning(f"Unknown algorithm: {algorithm}, using Random Forest fallback")
-            algorithm = 'random_forest'
-            hyperparams = {
-                'n_estimators': 100, 
-                'max_depth': 10,
-                'min_samples_split': 5,
-                'max_features': 'sqrt',
-                'random_state': 42,
-                'n_jobs': -1
-            }
+            raise ValueError(f"Unknown algorithm: {algorithm}. Meta-learning model predicted unsupported algorithm.")
         
         model_class = self.algorithm_map[algorithm]
         
@@ -232,21 +258,9 @@ class FinalModelTrainer:
             filtered_params['device'] = 'auto'
             logger.info("Using PyTorch MLP with auto GPU/CPU detection")
             
-        try:
-            model = model_class(**filtered_params)
-            logger.info(f"Created {algorithm} model with params: {filtered_params}")
-            return model
-        except Exception as e:
-            logger.error(f"Error creating {algorithm} model: {str(e)}")
-            logger.warning(f"Falling back to Random Forest for {algorithm}")
-            # Use a more robust fallback with basic parameters
-            return RandomForestRegressor(
-                n_estimators=100, 
-                max_depth=10,
-                min_samples_split=5,
-                random_state=42,
-                n_jobs=-1  # Use all CPU cores for fallback
-            )
+        model = model_class(**filtered_params)
+        logger.info(f"Created {algorithm} model with params: {filtered_params}")
+        return model
     
     def load_dataset_data(self, dataset_name: str, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         """
@@ -504,9 +518,11 @@ def main():
     """
     
     # Configuration
-    data_dir = "data_engineered_autofeat"
-    output_dir = "result/final_models"
-    meta_learning_model_dir = "meta_learning_model"  # Directory with trained meta-learning model
+    import os
+    base_dir = "/Users/sarthakbiswas/Documents/automl/auto_ml_tabular"
+    data_dir = os.path.join(base_dir, "data_engineered_autofeat")
+    output_dir = os.path.join(base_dir, "result/final_models")
+    meta_learning_model_dir = os.path.join(base_dir, "meta_learning_model")  # Absolute path to trained meta-learning model
     
     logger.info("Starting Final Model Training Pipeline")
     logger.info(f"Data directory: {data_dir}")
