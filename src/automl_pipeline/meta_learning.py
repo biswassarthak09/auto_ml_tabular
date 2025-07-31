@@ -12,6 +12,7 @@ import logging
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -498,9 +499,366 @@ class AdvancedMetaLearningAutoML:
         
         return pd.DataFrame(hp_rows)
     
+    def fit_preprocessors(self, X: np.ndarray, y_algorithm: np.ndarray, 
+                         y_hyperparams: np.ndarray, hp_mask: np.ndarray):
+        """
+        Fit all preprocessors (scalers, encoders) on training data
+        This is used for proper train/validation splits in validation
+        """
+        logger.info("Fitting preprocessors on training data...")
+        
+        # Fit feature scaler
+        self.meta_features_scaler = StandardScaler()
+        self.meta_features_scaler.fit(X)
+        
+        # Fit algorithm encoder
+        self.algorithm_encoder = LabelEncoder()
+        self.algorithm_encoder.fit(y_algorithm.astype(str))
+        self.algorithms_list = list(self.algorithm_encoder.classes_)
+        
+        # Fit hyperparameter scalers
+        self.hp_scalers = {}
+        for i in range(y_hyperparams.shape[1]):
+            valid_mask = hp_mask[:, i] & (~np.isnan(y_hyperparams[:, i]))
+            if valid_mask.sum() > 1:
+                hp_name = f"hp_{i}"
+                if hasattr(self, 'hyperparameter_names') and i < len(self.hyperparameter_names):
+                    hp_name = self.hyperparameter_names[i]
+                
+                scaler = StandardScaler()
+                scaler.fit(y_hyperparams[valid_mask, i].reshape(-1, 1))
+                self.hp_scalers[hp_name] = scaler
+        
+        logger.info(f"Fitted preprocessors: {len(self.algorithms_list)} algorithms, {len(self.hp_scalers)} hyperparameters")
+    
     def train_meta_model(self, X: np.ndarray, y_algorithm: np.ndarray, 
+                        y_hyperparams: np.ndarray, hp_mask: np.ndarray,
+                        n_folds: int = 5):
+        """Train the MLP meta-learning model with cross-validation"""
+        logger.info(f"Training advanced MLP meta-learning model with {n_folds}-fold cross-validation...")
+        
+        from sklearn.model_selection import StratifiedKFold
+        
+        # Initialize cross-validation
+        skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
+        
+        # Initialize model dimensions
+        n_meta_features = X.shape[1]
+        n_algorithms = len(self.algorithms_list)
+        n_hyperparams = y_hyperparams.shape[1]
+        
+        logger.info(f"Total samples: {len(X)}")
+        
+        # Cross-validation results
+        fold_results = []
+        all_fold_train_losses = []
+        all_fold_val_losses = []
+        all_fold_train_accs = []
+        all_fold_val_accs = []
+        
+        for fold, (train_idx, val_idx) in enumerate(skf.split(X, y_algorithm)):
+            logger.info(f"\n--- Cross-Validation Fold {fold + 1}/{n_folds} ---")
+            logger.info(f"Train samples: {len(train_idx)}, Val samples: {len(val_idx)}")
+            
+            # Split data for this fold
+            X_train, X_val = X[train_idx], X[val_idx]
+            y_algo_train, y_algo_val = y_algorithm[train_idx], y_algorithm[val_idx]
+            y_hp_train, y_hp_val = y_hyperparams[train_idx], y_hyperparams[val_idx]
+            hp_mask_train, hp_mask_val = hp_mask[train_idx], hp_mask[val_idx]
+            
+            # Create a fresh model for this fold
+            self.model = MetaLearningMLP(
+                n_meta_features=n_meta_features,
+                n_algorithms=n_algorithms,
+                n_hyperparams=n_hyperparams
+            ).to(self.device)
+            
+            # Create datasets and dataloaders for this fold
+            train_dataset = MetaLearningDataset(X_train, y_algo_train, y_hp_train, hp_mask_train)
+            val_dataset = MetaLearningDataset(X_val, y_algo_val, y_hp_val, hp_mask_val)
+            
+            train_dataloader = DataLoader(train_dataset, batch_size=self.training_config['batch_size'], shuffle=True)
+            val_dataloader = DataLoader(val_dataset, batch_size=self.training_config['batch_size'], shuffle=False)
+            
+            # Initialize optimizer and scheduler for this fold
+            optimizer = torch.optim.Adam(self.model.parameters(), lr=self.training_config['learning_rate'])
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer, mode='min', factor=0.5, patience=10
+            )
+            
+            # Training loop for this fold
+            fold_train_losses = []
+            fold_val_losses = []
+            fold_train_accs = []
+            fold_val_accs = []
+            
+            best_val_loss = float('inf')
+            patience_counter = 0
+            
+            for epoch in range(self.training_config['n_epochs']):
+                # Training phase
+                self.model.train()
+                train_loss = 0.0
+                train_correct = 0
+                train_total = 0
+                
+                for batch_meta, batch_algo, batch_hp, batch_mask in train_dataloader:
+                    batch_meta = batch_meta.to(self.device)
+                    batch_algo = batch_algo.to(self.device)
+                    batch_hp = batch_hp.to(self.device)
+                    batch_mask = batch_mask.to(self.device)
+                    
+                    optimizer.zero_grad()
+                    
+                    algo_logits, hp_preds = self.model(batch_meta)
+                    
+                    # Algorithm classification loss
+                    algo_loss = F.cross_entropy(algo_logits, batch_algo)
+                    
+                    # Hyperparameter regression loss (only for valid hyperparameters)
+                    hp_loss = torch.tensor(0.0, device=self.device)
+                    valid_hp_count = 0
+                    
+                    for i in range(batch_hp.shape[1]):
+                        mask = batch_mask[:, i]
+                        if mask.sum() > 0:
+                            hp_loss += F.mse_loss(hp_preds[mask, i], batch_hp[mask, i])
+                            valid_hp_count += 1
+                    
+                    if valid_hp_count > 0:
+                        hp_loss = hp_loss / valid_hp_count
+                    
+                    # Combined loss
+                    total_batch_loss = (
+                        self.training_config['algorithm_loss_weight'] * algo_loss + 
+                        self.training_config['hyperparameter_loss_weight'] * hp_loss
+                    )
+                    
+                    total_batch_loss.backward()
+                    optimizer.step()
+                    
+                    train_loss += total_batch_loss.item()
+                    
+                    # Calculate accuracy
+                    _, predicted = torch.max(algo_logits.data, 1)
+                    train_total += batch_algo.size(0)
+                    train_correct += (predicted == batch_algo).sum().item()
+                
+                # Validation phase
+                self.model.eval()
+                val_loss = 0.0
+                val_correct = 0
+                val_total = 0
+                
+                with torch.no_grad():
+                    for batch_meta, batch_algo, batch_hp, batch_mask in val_dataloader:
+                        batch_meta = batch_meta.to(self.device)
+                        batch_algo = batch_algo.to(self.device)
+                        batch_hp = batch_hp.to(self.device)
+                        batch_mask = batch_mask.to(self.device)
+                        
+                        algo_logits, hp_preds = self.model(batch_meta)
+                        
+                        # Algorithm classification loss
+                        algo_loss = F.cross_entropy(algo_logits, batch_algo)
+                        
+                        # Hyperparameter regression loss
+                        hp_loss = torch.tensor(0.0, device=self.device)
+                        valid_hp_count = 0
+                        
+                        for i in range(batch_hp.shape[1]):
+                            mask = batch_mask[:, i]
+                            if mask.sum() > 0:
+                                hp_loss += F.mse_loss(hp_preds[mask, i], batch_hp[mask, i])
+                                valid_hp_count += 1
+                        
+                        if valid_hp_count > 0:
+                            hp_loss = hp_loss / valid_hp_count
+                        
+                        # Combined loss
+                        total_batch_loss = (
+                            self.training_config['algorithm_loss_weight'] * algo_loss + 
+                            self.training_config['hyperparameter_loss_weight'] * hp_loss
+                        )
+                        
+                        val_loss += total_batch_loss.item()
+                        
+                        # Calculate accuracy
+                        _, predicted = torch.max(algo_logits.data, 1)
+                        val_total += batch_algo.size(0)
+                        val_correct += (predicted == batch_algo).sum().item()
+                
+                # Calculate averages
+                avg_train_loss = train_loss / len(train_dataloader)
+                avg_val_loss = val_loss / len(val_dataloader)
+                train_acc = train_correct / train_total
+                val_acc = val_correct / val_total
+                
+                # Store fold history
+                fold_train_losses.append(avg_train_loss)
+                fold_val_losses.append(avg_val_loss)
+                fold_train_accs.append(train_acc)
+                fold_val_accs.append(val_acc)
+                
+                # Learning rate scheduling
+                scheduler.step(avg_val_loss)
+                
+                # Early stopping
+                if avg_val_loss < best_val_loss:
+                    best_val_loss = avg_val_loss
+                    patience_counter = 0
+                    # Save best model state for this fold
+                    best_model_state = self.model.state_dict().copy()
+                else:
+                    patience_counter += 1
+                
+                # Log progress
+                if epoch % 20 == 0:
+                    logger.info(f"Fold {fold+1}, Epoch {epoch}: "
+                              f"Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}, "
+                              f"Train Acc: {train_acc:.3f}, Val Acc: {val_acc:.3f}")
+                
+                # Early stopping
+                if patience_counter >= self.training_config['early_stopping_patience']:
+                    logger.info(f"Fold {fold+1}: Early stopping at epoch {epoch}")
+                    break
+            
+            # Restore best model for this fold
+            if 'best_model_state' in locals():
+                self.model.load_state_dict(best_model_state)
+            
+            # Store fold results
+            fold_result = {
+                'fold': fold + 1,
+                'best_val_loss': best_val_loss,
+                'final_train_acc': fold_train_accs[-1] if fold_train_accs else 0,
+                'final_val_acc': fold_val_accs[-1] if fold_val_accs else 0,
+                'train_losses': fold_train_losses,
+                'val_losses': fold_val_losses,
+                'train_accs': fold_train_accs,
+                'val_accs': fold_val_accs
+            }
+            fold_results.append(fold_result)
+            
+            # Add to overall CV metrics
+            all_fold_train_losses.extend(fold_train_losses)
+            all_fold_val_losses.extend(fold_val_losses)
+            all_fold_train_accs.extend(fold_train_accs)
+            all_fold_val_accs.extend(fold_val_accs)
+            
+            logger.info(f"Fold {fold+1} completed: Best Val Loss: {best_val_loss:.4f}, "
+                       f"Final Train Acc: {train_acc:.3f}, Final Val Acc: {val_acc:.3f}")
+        
+        # Calculate cross-validation summary
+        final_val_accs = [fold['final_val_acc'] for fold in fold_results]
+        final_val_losses = [fold['best_val_loss'] for fold in fold_results]
+        
+        mean_val_acc = np.mean(final_val_accs)
+        std_val_acc = np.std(final_val_accs)
+        mean_val_loss = np.mean(final_val_losses)
+        std_val_loss = np.std(final_val_losses)
+        
+        logger.info(f"\n=== Cross-Validation Summary ===")
+        logger.info(f"Mean Validation Accuracy: {mean_val_acc:.3f} ± {std_val_acc:.3f}")
+        logger.info(f"Mean Validation Loss: {mean_val_loss:.4f} ± {std_val_loss:.4f}")
+        logger.info(f"Fold Accuracies: {[f'{acc:.3f}' for acc in final_val_accs]}")
+        
+        # Train final model on all data using best configuration
+        logger.info("\nTraining final model on all data...")
+        self.model = MetaLearningMLP(
+            n_meta_features=n_meta_features,
+            n_algorithms=n_algorithms,
+            n_hyperparams=n_hyperparams
+        ).to(self.device)
+        
+        # Store dimensions for later use
+        self.meta_features_dim = n_meta_features
+        self.hp_dim = n_hyperparams
+        self.hidden_dim = 256  # Default hidden dimension
+        
+        # Use all data for final training
+        final_train_dataset = MetaLearningDataset(X, y_algorithm, y_hyperparams, hp_mask)
+        final_train_dataloader = DataLoader(final_train_dataset, batch_size=self.training_config['batch_size'], shuffle=True)
+        
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.training_config['learning_rate'])
+        
+        # Train for a fixed number of epochs (no validation needed)
+        final_epochs = min(50, self.training_config['n_epochs'])
+        for epoch in range(final_epochs):
+            self.model.train()
+            total_loss = 0.0
+            
+            for batch_meta, batch_algo, batch_hp, batch_mask in final_train_dataloader:
+                batch_meta = batch_meta.to(self.device)
+                batch_algo = batch_algo.to(self.device)
+                batch_hp = batch_hp.to(self.device)
+                batch_mask = batch_mask.to(self.device)
+                
+                optimizer.zero_grad()
+                
+                algo_logits, hp_preds = self.model(batch_meta)
+                
+                # Algorithm classification loss
+                algo_loss = F.cross_entropy(algo_logits, batch_algo)
+                
+                # Hyperparameter regression loss
+                hp_loss = torch.tensor(0.0, device=self.device)
+                valid_hp_count = 0
+                
+                for i in range(batch_hp.shape[1]):
+                    mask = batch_mask[:, i]
+                    if mask.sum() > 0:
+                        hp_loss += F.mse_loss(hp_preds[mask, i], batch_hp[mask, i])
+                        valid_hp_count += 1
+                
+                if valid_hp_count > 0:
+                    hp_loss = hp_loss / valid_hp_count
+                
+                # Combined loss
+                total_batch_loss = (
+                    self.training_config['algorithm_loss_weight'] * algo_loss + 
+                    self.training_config['hyperparameter_loss_weight'] * hp_loss
+                )
+                
+                total_batch_loss.backward()
+                optimizer.step()
+                
+                total_loss += total_batch_loss.item()
+            
+            if epoch % 10 == 0:
+                avg_loss = total_loss / len(final_train_dataloader)
+                logger.info(f"Final training epoch {epoch}: Loss = {avg_loss:.4f}")
+        
+        logger.info("Final model training completed!")
+        self.is_trained = True
+        
+        # Create comprehensive training history
+        train_history = {
+            'cv_summary': {
+                'mean_val_acc': mean_val_acc,
+                'std_val_acc': std_val_acc,
+                'mean_val_loss': mean_val_loss,
+                'std_val_loss': std_val_loss,
+                'final_val_accs': final_val_accs,
+                'final_val_losses': final_val_losses
+            },
+            'fold_results': fold_results,
+            'train_loss': all_fold_train_losses,
+            'val_loss': all_fold_val_losses,
+            'train_acc': all_fold_train_accs,
+            'val_acc': all_fold_val_accs
+        }
+        
+        # Save training history
+        history_file = self.output_dir / 'training_history.json'
+        with open(history_file, 'w') as f:
+            json.dump(train_history, f, indent=2)
+        
+        return train_history
+
+    def train_meta_model_old(self, X: np.ndarray, y_algorithm: np.ndarray, 
                         y_hyperparams: np.ndarray, hp_mask: np.ndarray):
-        """Train the MLP meta-learning model"""
+        """Train the MLP meta-learning model (original version without validation)"""
         logger.info("Training advanced MLP meta-learning model...")
         
         # Initialize model
@@ -718,41 +1076,106 @@ class AdvancedMetaLearningAutoML:
                 
                 predicted_algorithm = self.algorithms_list[predicted_algo_idx]
                 
-                # Get hyperparameter predictions
+                # Get hyperparameter predictions - FIXED VERSION
                 hp_pred_np = hp_pred.cpu().numpy().flatten()
                 
-                # Map back to hyperparameter values
+                # Map back to hyperparameter values using TRAINED UNIFIED SPACE
                 predicted_hyperparams = {}
-                hp_idx = 0
                 
-                # Common hyperparameters based on the algorithm
-                if predicted_algorithm == 'random_forest':
-                    predicted_hyperparams = {
-                        'n_estimators': max(10, int(hp_pred_np[hp_idx] * 500)),
-                        'max_depth': max(3, int(hp_pred_np[hp_idx + 1] * 20)) if hp_idx + 1 < len(hp_pred_np) else 10,
-                        'min_samples_split': max(2, int(hp_pred_np[hp_idx + 2] * 20)) if hp_idx + 2 < len(hp_pred_np) else 2,
-                        'random_state': 42
-                    }
-                elif predicted_algorithm == 'gradient_boosting':
-                    predicted_hyperparams = {
-                        'n_estimators': max(10, int(hp_pred_np[hp_idx] * 500)),
-                        'learning_rate': max(0.01, hp_pred_np[hp_idx + 1]) if hp_idx + 1 < len(hp_pred_np) else 0.1,
-                        'max_depth': max(3, int(hp_pred_np[hp_idx + 2] * 10)) if hp_idx + 2 < len(hp_pred_np) else 6,
-                        'random_state': 42
-                    }
-                elif predicted_algorithm == 'mlp':
-                    hidden_size = max(50, int(hp_pred_np[hp_idx] * 500))
-                    predicted_hyperparams = {
-                        'hidden_layer_sizes': [hidden_size, hidden_size],
-                        'activation': 'relu',
-                        'alpha': max(0.0001, hp_pred_np[hp_idx + 1]) if hp_idx + 1 < len(hp_pred_np) else 0.001,
-                        'learning_rate': 'adaptive',
-                        'max_iter': 1000,
-                        'random_state': 42
-                    }
+                # Use the trained hyperparameter names and scalers if available
+                if hasattr(self, 'hyperparameter_names') and hasattr(self, 'hp_scalers') and self.hyperparameter_names:
+                    # CORRECT: Use the trained unified space
+                    for i, hp_name in enumerate(self.hyperparameter_names):
+                        if i < len(hp_pred_np):
+                            scaled_value = hp_pred_np[i]
+                            
+                            # Inverse transform using trained scaler
+                            if hp_name in self.hp_scalers:
+                                try:
+                                    original_value = self.hp_scalers[hp_name].inverse_transform([[scaled_value]])[0][0]
+                                except:
+                                    original_value = scaled_value
+                            else:
+                                original_value = scaled_value
+                            
+                            # Filter only relevant hyperparameters for the selected algorithm
+                            if predicted_algorithm == 'gradient_boosting':
+                                gb_hyperparams = {
+                                    'hp_n_estimators': 'n_estimators',
+                                    'hp_learning_rate': 'learning_rate', 
+                                    'hp_max_depth': 'max_depth',
+                                    'hp_min_samples_split': 'min_samples_split',
+                                    'hp_min_samples_leaf': 'min_samples_leaf',
+                                    'hp_subsample': 'subsample'
+                                }
+                                
+                                if hp_name in gb_hyperparams:
+                                    param_name = gb_hyperparams[hp_name]
+                                    
+                                    # Apply algorithm-specific constraints and data types
+                                    if param_name in ['n_estimators', 'max_depth', 'min_samples_split', 'min_samples_leaf']:
+                                        predicted_hyperparams[param_name] = max(1, int(abs(original_value)))
+                                    elif param_name == 'learning_rate':
+                                        predicted_hyperparams[param_name] = max(0.001, min(1.0, abs(original_value)))
+                                    elif param_name == 'subsample':
+                                        predicted_hyperparams[param_name] = max(0.1, min(1.0, abs(original_value)))
+                                    else:
+                                        predicted_hyperparams[param_name] = original_value
+                            
+                            elif predicted_algorithm == 'random_forest':
+                                rf_hyperparams = {
+                                    'hp_n_estimators': 'n_estimators',
+                                    'hp_max_depth': 'max_depth',
+                                    'hp_min_samples_split': 'min_samples_split',
+                                    'hp_min_samples_leaf': 'min_samples_leaf',
+                                    'hp_max_features': 'max_features'
+                                }
+                                
+                                if hp_name in rf_hyperparams:
+                                    param_name = rf_hyperparams[hp_name]
+                                    
+                                    if param_name in ['n_estimators', 'max_depth', 'min_samples_split', 'min_samples_leaf']:
+                                        predicted_hyperparams[param_name] = max(1, int(abs(original_value)))
+                                    elif param_name == 'max_features':
+                                        # Handle categorical max_features
+                                        if abs(original_value) > 0.5:
+                                            predicted_hyperparams[param_name] = 'sqrt'
+                                        else:
+                                            predicted_hyperparams[param_name] = 'log2'
+                                    else:
+                                        predicted_hyperparams[param_name] = original_value
+                            
+                            elif predicted_algorithm == 'mlp':
+                                mlp_hyperparams = {
+                                    'hp_hidden_layer_sizes': 'hidden_layer_sizes',
+                                    'hp_alpha': 'alpha',
+                                    'hp_learning_rate': 'learning_rate_init',
+                                    'hp_max_iter': 'max_iter'
+                                }
+                                
+                                if hp_name in mlp_hyperparams:
+                                    param_name = mlp_hyperparams[hp_name]
+                                    
+                                    if param_name == 'hidden_layer_sizes':
+                                        hidden_size = max(50, int(abs(original_value)))
+                                        predicted_hyperparams[param_name] = [hidden_size, hidden_size]
+                                    elif param_name == 'alpha':
+                                        predicted_hyperparams[param_name] = max(0.0001, min(0.1, abs(original_value)))
+                                    elif param_name == 'learning_rate_init':
+                                        predicted_hyperparams[param_name] = max(0.001, min(0.1, abs(original_value)))
+                                    elif param_name == 'max_iter':
+                                        predicted_hyperparams[param_name] = max(100, min(2000, int(abs(original_value))))
+                                    else:
+                                        predicted_hyperparams[param_name] = original_value
                 else:
-                    # Default hyperparameters for other algorithms
-                    predicted_hyperparams = {'random_state': 42}
+                    # NO FALLBACK: Fail gracefully if trained unified space not available
+                    logger.error("Trained hyperparameter space not available! Model was not properly trained or saved.")
+                    logger.error("This indicates a serious issue with the meta-learning model.")
+                    logger.error("Please retrain the meta-learning model to ensure proper hyperparameter mapping.")
+                    return None
+                
+                # Add default random_state
+                predicted_hyperparams['random_state'] = 42
                 
                 result = {
                     'algorithm': predicted_algorithm,
@@ -788,6 +1211,8 @@ class AdvancedMetaLearningAutoML:
                 'model_state_dict': self.model.state_dict(),
                 'feature_scaler': self.feature_scaler,
                 'algorithms_list': self.algorithms_list,
+                'hyperparameter_names': self.hyperparameter_names,
+                'hp_scalers': self.hp_scalers,
                 'model_config': {
                     'meta_features_dim': self.meta_features_dim,
                     'n_algorithms': len(self.algorithms_list),
@@ -822,6 +1247,10 @@ class AdvancedMetaLearningAutoML:
             self.hidden_dim = config['hidden_dim']
             self.hp_dim = config['hp_dim']
             self.algorithms_list = checkpoint['algorithms_list']
+            
+            # Restore hyperparameter mapping - ADD THIS
+            self.hyperparameter_names = checkpoint.get('hyperparameter_names', [])
+            self.hp_scalers = checkpoint.get('hp_scalers', {})
             
             # Recreate and load model
             self.model = MetaLearningMLP(

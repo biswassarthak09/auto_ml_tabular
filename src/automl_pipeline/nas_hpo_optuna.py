@@ -261,18 +261,20 @@ class NASHPOOptimizer:
         
         logger.info(f"📋 Total algorithms available: {len(self.algorithm_space)}")
         
-        # Keep track of core algorithms for quick testing
+        # Keep track of core algorithms for high-performance testing
+        # Focus on diverse, high-performance algorithms: XGBoost, Random Forest, MLP, KNN
         self.core_algorithms = {
-            'random_forest': RandomForestRegressor,
-            'gradient_boosting': GradientBoostingRegressor,
-            'ada_boost': AdaBoostRegressor,
-            'decision_tree': DecisionTreeRegressor,
-            'knn': KNeighborsRegressor,
+            'random_forest': RandomForestRegressor,  # Reliable ensemble method
+            'knn': KNeighborsRegressor,              # Instance-based learning
         }
         
-        # Add MLP if PyTorch is available
+        # Add XGBoost - usually the top performer
+        if XGBOOST_AVAILABLE:
+            self.core_algorithms['xgboost'] = xgb.XGBRegressor  # Gradient boosting champion
+        
+        # Add MLP - neural network for complex patterns
         if PYTORCH_AVAILABLE:
-            self.core_algorithms['mlp'] = PyTorchMLP
+            self.core_algorithms['mlp'] = PyTorchMLP  # Deep learning option
     
     def load_fold_data(self, dataset_name: str, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         """Load engineered data for specific dataset and fold"""
@@ -725,11 +727,11 @@ class NASHPOOptimizer:
 
 def main():
     """Main execution function"""
-    # Configuration - Optimized for 8-hour overnight run
+    # Configuration - Optimized for high performance with focused algorithms
     DATA_DIR = "data_engineered_autofeat"  # Use the engineered data from feature_engineering.py
-    RESULTS_DIR = "nas_hpo_results"
+    RESULTS_DIR = "nas_hpo_results_v3"
     TASK_TYPE = "regression"
-    N_TRIALS_PER_ALGORITHM = 30  # Optimized for 8-hour completion
+    N_TRIALS_PER_ALGORITHM = 200  # Increased trials for better optimization
     
     # Initialize and run optimization
     optimizer = NASHPOOptimizer(DATA_DIR, RESULTS_DIR, TASK_TYPE)

@@ -6,9 +6,8 @@ import joblib
 import logging
 from typing import Dict, Any, List, Tuple, Optional
 import torch
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, AdaBoostRegressor
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.linear_model import Ridge, Lasso
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import (mean_squared_error, mean_absolute_error, r2_score)
 from sklearn.model_selection import cross_val_score
 import matplotlib.pyplot as plt
@@ -17,21 +16,14 @@ from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
-# GPU-accelerated imports - Initialize as None for optional dependencies
+# GPU-accelerated imports - Only XGBoost for our focused approach
 xgb = None
-lgb = None
 
 try:
     import xgboost as xgb
     XGBOOST_AVAILABLE = True
 except ImportError:
     XGBOOST_AVAILABLE = False
-    
-try:
-    import lightgbm as lgb
-    LIGHTGBM_AVAILABLE = True
-except ImportError:
-    LIGHTGBM_AVAILABLE = False
 
 try:
     # Import PyTorch MLP from nas_hpo_optuna
@@ -47,7 +39,14 @@ logger = logging.getLogger(__name__)
 class FinalModelTrainer:
     """
     Train and evaluate final models using Meta-Learning predictions.
-    This class trains models on x_train/y_train and predicts y on x_test.
+    
+    Focused on 4 high-performance algorithms:
+    - XGBoost: Top gradient boosting performer
+    - Random Forest: Reliable ensemble method  
+    - MLP: Neural network for complex patterns
+    - KNN: Instance-based learning
+    
+    This class trains models on X_train/y_train and evaluates on X_test/y_test.
     """
     
     def __init__(self, data_dir: str, output_dir: str, meta_learning_model_dir: str):
@@ -72,30 +71,28 @@ class FinalModelTrainer:
         else:
             logger.info("💻 Using CPU-only mode")
         
-        # Algorithm mapping for regression - Updated with GPU support
+        # Algorithm mapping for regression - Focus on 4 core high-performance algorithms
         self.algorithm_map = {
-            'random_forest': RandomForestRegressor,
-            'gradient_boosting': GradientBoostingRegressor,
-            'ada_boost': AdaBoostRegressor,
-            'decision_tree': DecisionTreeRegressor,
-            'ridge': Ridge,
-            'lasso': Lasso
+            'random_forest': RandomForestRegressor,  # Reliable ensemble method
+            'knn': KNeighborsRegressor,              # Instance-based learning
         }
         
-        # Add GPU-accelerated algorithms if available
+        # Add XGBoost - usually the top performer
         if XGBOOST_AVAILABLE and xgb is not None:
             self.algorithm_map['xgboost'] = xgb.XGBRegressor
             logger.info("✅ XGBoost available for final model training")
+        else:
+            raise RuntimeError("XGBoost is required but not available!")
             
-        if LIGHTGBM_AVAILABLE and lgb is not None:
-            self.algorithm_map['lightgbm'] = lgb.LGBMRegressor
-            logger.info("✅ LightGBM available for final model training")
-            
+        # Add MLP - neural network for complex patterns  
         if PYTORCH_AVAILABLE and PyTorchMLP:
             self.algorithm_map['mlp'] = PyTorchMLP
             logger.info("✅ PyTorch MLP available for final model training (GPU/CPU auto-detection)")
+        else:
+            raise RuntimeError("PyTorch MLP is required but not available!")
         
-        logger.info(f"📋 Total algorithms available for final training: {len(self.algorithm_map)}")
+        logger.info(f"📋 Core algorithms available for final training: {len(self.algorithm_map)}")
+        logger.info(f"🎯 Focused on 4 high-performance algorithms: {list(self.algorithm_map.keys())}")
         
         # Load meta-learning model (MANDATORY - no fallbacks)
         self.meta_model = None
@@ -163,8 +160,8 @@ class FinalModelTrainer:
     
     def constrain_hyperparameters(self, algorithm: str, hyperparams: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Apply reasonable constraints to hyperparameters to prevent extreme values
-        that lead to excessive training time or poor performance.
+        Apply reasonable constraints to hyperparameters for our 4 core algorithms:
+        xgboost, random_forest, mlp, knn
         """
         constrained = hyperparams.copy()
         
@@ -180,18 +177,6 @@ class FinalModelTrainer:
             if 'max_depth' in constrained:
                 constrained['max_depth'] = max(3, min(20, constrained['max_depth']))
         
-        elif algorithm == 'gradient_boosting':
-            # Limit n_estimators
-            if 'n_estimators' in constrained:
-                original_n_est = constrained['n_estimators']
-                constrained['n_estimators'] = max(50, min(1000, constrained['n_estimators']))
-                if original_n_est != constrained['n_estimators']:
-                    logger.info(f"Constrained GB n_estimators from {original_n_est} to {constrained['n_estimators']}")
-            
-            # Ensure reasonable learning rate
-            if 'learning_rate' in constrained:
-                constrained['learning_rate'] = max(0.01, min(0.3, constrained['learning_rate']))
-        
         elif algorithm == 'xgboost':
             # Limit n_estimators
             if 'n_estimators' in constrained:
@@ -201,14 +186,20 @@ class FinalModelTrainer:
             if 'learning_rate' in constrained:
                 constrained['learning_rate'] = max(0.01, min(0.3, constrained['learning_rate']))
         
-        elif algorithm == 'lightgbm':
-            # Limit n_estimators
-            if 'n_estimators' in constrained:
-                constrained['n_estimators'] = max(50, min(1000, constrained['n_estimators']))
+        elif algorithm == 'knn':
+            # Limit n_neighbors to reasonable range
+            if 'n_neighbors' in constrained:
+                original_n_neighbors = constrained['n_neighbors']
+                constrained['n_neighbors'] = max(1, min(50, constrained['n_neighbors']))
+                if original_n_neighbors != constrained['n_neighbors']:
+                    logger.info(f"Constrained n_neighbors from {original_n_neighbors} to {constrained['n_neighbors']}")
+            else:
+                # Default to 5 if not specified
+                constrained['n_neighbors'] = 5
             
-            # Ensure reasonable learning rate
-            if 'learning_rate' in constrained:
-                constrained['learning_rate'] = max(0.01, min(0.3, constrained['learning_rate']))
+            # Ensure valid weights parameter
+            if 'weights' in constrained and constrained['weights'] not in ['uniform', 'distance']:
+                constrained['weights'] = 'uniform'
         
         elif algorithm in ['mlp', 'neural_network']:
             # Limit hidden layer sizes
@@ -222,13 +213,19 @@ class FinalModelTrainer:
                     # Single value
                     constrained['hidden_layer_sizes'] = max(10, min(500, constrained['hidden_layer_sizes']))
         
+        else:
+            logger.warning(f"Unknown algorithm {algorithm} - no hyperparameter constraints applied")
+        
         return constrained
     
     def create_model(self, algorithm: str, hyperparams: Dict[str, Any]):
-        """Create model instance with specified algorithm and hyperparameters - NO FALLBACKS"""
+        """Create model instance for our 4 core algorithms: xgboost, random_forest, mlp, knn"""
         
+        # Validate algorithm is supported
         if algorithm not in self.algorithm_map:
-            raise ValueError(f"Unknown algorithm: {algorithm}. Meta-learning model predicted unsupported algorithm.")
+            supported_algos = list(self.algorithm_map.keys())
+            raise ValueError(f"Unsupported algorithm: {algorithm}. "
+                           f"Only core algorithms are supported: {supported_algos}")
         
         model_class = self.algorithm_map[algorithm]
         
@@ -248,10 +245,6 @@ class FinalModelTrainer:
                 'tree_method': 'gpu_hist'
             })
             logger.info("Using GPU acceleration for XGBoost")
-            
-        elif algorithm == 'lightgbm' and self.cuda_available:
-            filtered_params.update({'device': 'gpu'})
-            logger.info("Using GPU acceleration for LightGBM")
             
         elif algorithm == 'mlp' and PYTORCH_AVAILABLE:
             # PyTorch MLP handles device automatically
