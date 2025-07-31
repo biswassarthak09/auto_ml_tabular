@@ -138,7 +138,7 @@ class FinalModelTrainer:
         logger.info(f"Using meta-learning model for prediction on {dataset_name}")
         
         # Use absolute path for original data directory
-        original_data_dir = "/Users/sarthakbiswas/Documents/automl/auto_ml_tabular/data"
+        original_data_dir = r"C:\Users\ahker\Desktop\University\auto_ml\auto_ml_tabular\data"
         
         prediction = self.meta_model.predict_for_new_dataset(
             dataset_name, 
@@ -519,7 +519,7 @@ def main():
     
     # Configuration
     import os
-    base_dir = "/Users/sarthakbiswas/Documents/automl/auto_ml_tabular"
+    base_dir = r"C:\Users\ahker\Desktop\University\auto_ml\auto_ml_tabular"
     data_dir = os.path.join(base_dir, "data_engineered_autofeat")
     output_dir = os.path.join(base_dir, "result/final_models")
     meta_learning_model_dir = os.path.join(base_dir, "meta_learning_model")  # Absolute path to trained meta-learning model
