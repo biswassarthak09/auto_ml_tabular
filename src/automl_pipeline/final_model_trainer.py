@@ -111,7 +111,10 @@ class FinalModelTrainer:
         """Load the trained meta-learning model - MANDATORY"""
         logger.info(f"Loading meta-learning model from {self.meta_learning_model_dir}")
         
-        # Import meta-learning model
+        # Import meta-learning model with absolute path
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
         from meta_learning import AdvancedMetaLearningAutoML
         self.meta_model = AdvancedMetaLearningAutoML(self.meta_learning_model_dir)
         
@@ -134,8 +137,8 @@ class FinalModelTrainer:
         
         logger.info(f"Using meta-learning model for prediction on {dataset_name}")
         
-        # Use absolute path for original data directory
-        original_data_dir = "/Users/sarthakbiswas/Documents/automl/auto_ml_tabular/data"
+        # Use relative path for original data directory (more flexible)
+        original_data_dir = str(Path(self.data_dir).parent / "data")
         
         prediction = self.meta_model.predict_for_new_dataset(
             dataset_name, 

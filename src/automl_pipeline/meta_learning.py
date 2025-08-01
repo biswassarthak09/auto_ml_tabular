@@ -248,7 +248,7 @@ class AdvancedMetaLearningAutoML:
         
         # Model state
         self.is_trained = False
-        self.algorithms_list = []
+        self.algorithms_list = ['random_forest', 'xgboost', 'mlp', 'knn']  # 4 core algorithms from NAS-HPO
         self.hyperparameter_names = []
         
         # Training configuration
@@ -263,8 +263,8 @@ class AdvancedMetaLearningAutoML:
     
     def prepare_training_data(self, nas_hpo_results_dir: str, 
                             original_data_dir: str, fe_data_dir: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Prepare training data for MLP training using fold-level data"""
-        logger.info("Preparing fold-level training data for advanced meta-learning...")
+        """Prepare training data for MLP training using DATASET-LEVEL best configs"""
+        logger.info("Preparing DATASET-LEVEL training data for advanced meta-learning...")
         
         # Load NAS-HPO results
         nas_results = self._load_nas_hpo_results(nas_hpo_results_dir)
@@ -278,29 +278,34 @@ class AdvancedMetaLearningAutoML:
             datasets, original_data_dir, fe_data_dir
         )
         
-        # Prepare fold-level targets
-        algorithm_targets_df = self._prepare_algorithm_targets(nas_results)
-        hyperparameter_targets_df = self._prepare_hyperparameter_targets(nas_results)
+        # NEW: Prepare DATASET-LEVEL targets (same y-label for all folds)
+        dataset_level_targets = self._prepare_dataset_level_targets(nas_results)
         
-        # Create fold-level meta-features by replicating dataset meta-features for each fold
+        # Create fold-level meta-features with SAME y-label for all folds of each dataset
         fold_meta_features = []
-        for _, algo_row in algorithm_targets_df.iterrows():
-            dataset = algo_row['dataset']
-            fold = algo_row['fold']
-            
-            # Find corresponding meta-features for this dataset
-            dataset_meta = self.meta_features_df[self.meta_features_df['dataset'] == dataset]
-            if not dataset_meta.empty:
-                meta_row = dataset_meta.iloc[0].copy()
-                meta_row['fold'] = fold  # Add fold column
-                meta_row['dataset_fold'] = f"{dataset}_fold_{fold}"
-                fold_meta_features.append(meta_row)
+        for dataset in datasets:
+            if dataset in dataset_level_targets:
+                dataset_target = dataset_level_targets[dataset]
+                
+                # Create 10 training examples (one per fold) with SAME y-label
+                for fold in range(1, 11):  # Assuming 10 folds
+                    # Find corresponding meta-features for this dataset
+                    dataset_meta = self.meta_features_df[self.meta_features_df['dataset'] == dataset]
+                    if not dataset_meta.empty:
+                        meta_row = dataset_meta.iloc[0].copy()
+                        meta_row['fold'] = fold
+                        meta_row['dataset_fold'] = f"{dataset}_fold_{fold}"
+                        
+                        # Add SAME algorithm and hyperparameters for all folds
+                        meta_row['best_algorithm'] = dataset_target['algorithm']
+                        
+                        # Add hyperparameters
+                        for hp_name, hp_value in dataset_target['hyperparams'].items():
+                            meta_row[f'hp_{hp_name}'] = hp_value
+                        
+                        fold_meta_features.append(meta_row)
         
-        fold_meta_features_df = pd.DataFrame(fold_meta_features)
-        
-        # Merge with fold-level targets
-        training_data = fold_meta_features_df.merge(algorithm_targets_df, on=['dataset', 'fold'], how='inner')
-        training_data = training_data.merge(hyperparameter_targets_df, on=['dataset', 'fold'], how='inner')
+        training_data = pd.DataFrame(fold_meta_features)
         
         # Prepare arrays for training
         feature_cols = [col for col in self.meta_features_df.columns if col != 'dataset']
@@ -316,19 +321,36 @@ class AdvancedMetaLearningAutoML:
         self.hyperparameter_names = hp_cols
         
         y_hyperparams = training_data[hp_cols].values
-        hp_mask = ~np.isnan(y_hyperparams)  # Mask for missing values
+        
+        # Convert all hyperparameter values to float, handling categorical ones
+        y_hyperparams_numeric = np.full(y_hyperparams.shape, np.nan, dtype=float)
+        for i, col in enumerate(hp_cols):
+            for j in range(len(y_hyperparams)):
+                val = y_hyperparams[j, i]
+                if pd.isna(val):
+                    y_hyperparams_numeric[j, i] = np.nan
+                elif isinstance(val, (int, float)):
+                    y_hyperparams_numeric[j, i] = float(val)
+                else:
+                    # Handle categorical values (already encoded as hash)
+                    try:
+                        y_hyperparams_numeric[j, i] = float(val)
+                    except (ValueError, TypeError):
+                        y_hyperparams_numeric[j, i] = float(hash(str(val)) % 100)
+        
+        hp_mask = ~np.isnan(y_hyperparams_numeric)  # Mask for missing values
         
         # Scale features and hyperparameters
         X_scaled = self.feature_scaler.fit_transform(X)
         
         # Scale hyperparameters individually
-        y_hyperparams_scaled = y_hyperparams.copy()
+        y_hyperparams_scaled = y_hyperparams_numeric.copy()
         for i, hp_name in enumerate(hp_cols):
-            valid_mask = ~np.isnan(y_hyperparams[:, i])
+            valid_mask = ~np.isnan(y_hyperparams_numeric[:, i])
             if valid_mask.sum() > 1:
                 scaler = StandardScaler()
                 y_hyperparams_scaled[valid_mask, i] = scaler.fit_transform(
-                    y_hyperparams[valid_mask, i].reshape(-1, 1)
+                    y_hyperparams_numeric[valid_mask, i].reshape(-1, 1)
                 ).flatten()
                 self.hp_scalers[hp_name] = scaler
         
@@ -424,6 +446,57 @@ class AdvancedMetaLearningAutoML:
         result_df['dataset_fold'] = result_df['dataset'] + '_fold_' + result_df['fold'].astype(str)
         
         return result_df
+    
+    def _prepare_dataset_level_targets(self, nas_results: List[Dict]) -> Dict[str, Dict]:
+        """Prepare DATASET-LEVEL best algorithm and hyperparameters for each dataset"""
+        from collections import defaultdict
+        import numpy as np
+        
+        # Group results by dataset and algorithm
+        dataset_algorithm_scores = defaultdict(lambda: defaultdict(list))
+        dataset_algorithm_params = defaultdict(dict)
+        
+        for result in nas_results:
+            dataset = result['dataset']
+            algorithm = result['algorithm']
+            best_score = result.get('best_score', 0)
+            best_params = result.get('best_params', {})
+            
+            dataset_algorithm_scores[dataset][algorithm].append(best_score)
+            
+            # Store best params for this algorithm (use highest scoring one)
+            if algorithm not in dataset_algorithm_params[dataset] or best_score > dataset_algorithm_params[dataset][algorithm].get('score', -np.inf):
+                dataset_algorithm_params[dataset][algorithm] = {
+                    'params': best_params,
+                    'score': best_score
+                }
+        
+        # Find best algorithm per dataset
+        dataset_level_targets = {}
+        for dataset, algorithm_scores in dataset_algorithm_scores.items():
+            # Calculate mean score per algorithm
+            algorithm_mean_scores = {}
+            for algorithm, scores in algorithm_scores.items():
+                algorithm_mean_scores[algorithm] = np.mean(scores)
+            
+            # Find best algorithm
+            if algorithm_mean_scores:
+                best_algorithm = max(algorithm_mean_scores.items(), key=lambda x: x[1])
+                best_algo_name = best_algorithm[0]
+                best_mean_score = best_algorithm[1]
+                
+                # Get hyperparameters for best algorithm
+                best_hyperparams = dataset_algorithm_params[dataset][best_algo_name]['params']
+                
+                dataset_level_targets[dataset] = {
+                    'algorithm': best_algo_name,
+                    'mean_score': best_mean_score,
+                    'hyperparams': best_hyperparams
+                }
+                
+                logger.info(f"Dataset {dataset}: Best algorithm = {best_algo_name} (score: {best_mean_score:.4f})")
+        
+        return dataset_level_targets
     
     def _prepare_hyperparameter_targets(self, nas_results: List[Dict]) -> pd.DataFrame:
         """Prepare hyperparameter targets using fold-level data"""
@@ -1099,26 +1172,32 @@ class AdvancedMetaLearningAutoML:
                                 original_value = scaled_value
                             
                             # Filter only relevant hyperparameters for the selected algorithm
-                            if predicted_algorithm == 'gradient_boosting':
-                                gb_hyperparams = {
+                            if predicted_algorithm == 'xgboost':
+                                xgb_hyperparams = {
                                     'hp_n_estimators': 'n_estimators',
-                                    'hp_learning_rate': 'learning_rate', 
                                     'hp_max_depth': 'max_depth',
-                                    'hp_min_samples_split': 'min_samples_split',
-                                    'hp_min_samples_leaf': 'min_samples_leaf',
-                                    'hp_subsample': 'subsample'
+                                    'hp_learning_rate': 'learning_rate',
+                                    'hp_subsample': 'subsample',
+                                    'hp_colsample_bytree': 'colsample_bytree',
+                                    'hp_min_child_weight': 'min_child_weight',
+                                    'hp_reg_alpha': 'reg_alpha',
+                                    'hp_reg_lambda': 'reg_lambda'
                                 }
                                 
-                                if hp_name in gb_hyperparams:
-                                    param_name = gb_hyperparams[hp_name]
+                                if hp_name in xgb_hyperparams:
+                                    param_name = xgb_hyperparams[hp_name]
                                     
                                     # Apply algorithm-specific constraints and data types
-                                    if param_name in ['n_estimators', 'max_depth', 'min_samples_split', 'min_samples_leaf']:
-                                        predicted_hyperparams[param_name] = max(1, int(abs(original_value)))
+                                    if param_name in ['n_estimators', 'max_depth']:
+                                        predicted_hyperparams[param_name] = max(50, min(500, int(abs(original_value))))
+                                    elif param_name == 'min_child_weight':
+                                        predicted_hyperparams[param_name] = max(1, min(10, int(abs(original_value))))
                                     elif param_name == 'learning_rate':
-                                        predicted_hyperparams[param_name] = max(0.001, min(1.0, abs(original_value)))
-                                    elif param_name == 'subsample':
-                                        predicted_hyperparams[param_name] = max(0.1, min(1.0, abs(original_value)))
+                                        predicted_hyperparams[param_name] = max(0.01, min(0.3, abs(original_value)))
+                                    elif param_name in ['subsample', 'colsample_bytree']:
+                                        predicted_hyperparams[param_name] = max(0.6, min(1.0, abs(original_value)))
+                                    elif param_name in ['reg_alpha', 'reg_lambda']:
+                                        predicted_hyperparams[param_name] = max(0, min(10, abs(original_value)))
                                     else:
                                         predicted_hyperparams[param_name] = original_value
                             
@@ -1146,25 +1225,88 @@ class AdvancedMetaLearningAutoML:
                                         predicted_hyperparams[param_name] = original_value
                             
                             elif predicted_algorithm == 'mlp':
+                                # UPDATED: Based on actual JSON results
+                                # ['activation', 'alpha', 'batch_size', 'layer_0_size', 'layer_1_size', 'layer_2_size', 'layer_3_size', 'learning_rate', 'max_iter', 'n_layers']
                                 mlp_hyperparams = {
-                                    'hp_hidden_layer_sizes': 'hidden_layer_sizes',
-                                    'hp_alpha': 'alpha',
-                                    'hp_learning_rate': 'learning_rate_init',
-                                    'hp_max_iter': 'max_iter'
+                                    'hp_n_layers': 'n_layers',
+                                    'hp_layer_0_size': 'layer_0_size',
+                                    'hp_layer_1_size': 'layer_1_size',
+                                    'hp_layer_2_size': 'layer_2_size',
+                                    'hp_layer_3_size': 'layer_3_size',
+                                    'hp_activation': 'activation',
+                                    'hp_learning_rate': 'learning_rate',  # Fixed: was learning_rate_init
+                                    'hp_batch_size': 'batch_size',
+                                    'hp_max_iter': 'max_iter',
+                                    'hp_alpha': 'alpha'
                                 }
                                 
                                 if hp_name in mlp_hyperparams:
                                     param_name = mlp_hyperparams[hp_name]
                                     
-                                    if param_name == 'hidden_layer_sizes':
-                                        hidden_size = max(50, int(abs(original_value)))
-                                        predicted_hyperparams[param_name] = [hidden_size, hidden_size]
-                                    elif param_name == 'alpha':
-                                        predicted_hyperparams[param_name] = max(0.0001, min(0.1, abs(original_value)))
-                                    elif param_name == 'learning_rate_init':
-                                        predicted_hyperparams[param_name] = max(0.001, min(0.1, abs(original_value)))
+                                    if param_name == 'n_layers':
+                                        predicted_hyperparams[param_name] = max(1, min(4, int(abs(original_value))))
+                                    elif param_name in ['layer_0_size', 'layer_1_size', 'layer_2_size', 'layer_3_size']:
+                                        predicted_hyperparams[param_name] = max(50, min(512, int(abs(original_value))))
+                                    elif param_name == 'activation':
+                                        # Handle categorical activation
+                                        if abs(original_value) > 0.5:
+                                            predicted_hyperparams[param_name] = 'tanh'
+                                        else:
+                                            predicted_hyperparams[param_name] = 'relu'
+                                    elif param_name == 'learning_rate':
+                                        predicted_hyperparams[param_name] = max(0.0001, min(0.01, abs(original_value)))
+                                    elif param_name == 'batch_size':
+                                        # Handle categorical batch_size
+                                        batch_value = abs(original_value)
+                                        if batch_value < 0.25:
+                                            predicted_hyperparams[param_name] = 32
+                                        elif batch_value < 0.5:
+                                            predicted_hyperparams[param_name] = 64
+                                        elif batch_value < 0.75:
+                                            predicted_hyperparams[param_name] = 128
+                                        else:
+                                            predicted_hyperparams[param_name] = 256
                                     elif param_name == 'max_iter':
-                                        predicted_hyperparams[param_name] = max(100, min(2000, int(abs(original_value))))
+                                        predicted_hyperparams[param_name] = max(100, min(500, int(abs(original_value))))
+                                    elif param_name == 'alpha':
+                                        predicted_hyperparams[param_name] = max(0.0001, min(0.01, abs(original_value)))
+                                    else:
+                                        predicted_hyperparams[param_name] = original_value
+                            
+                            elif predicted_algorithm == 'knn':
+                                # UPDATED: Based on actual JSON results
+                                # ['algorithm', 'n_neighbors', 'p', 'weights']
+                                knn_hyperparams = {
+                                    'hp_n_neighbors': 'n_neighbors',
+                                    'hp_weights': 'weights',
+                                    'hp_algorithm': 'algorithm',
+                                    'hp_p': 'p'
+                                }
+                                
+                                if hp_name in knn_hyperparams:
+                                    param_name = knn_hyperparams[hp_name]
+                                    
+                                    if param_name == 'n_neighbors':
+                                        predicted_hyperparams[param_name] = max(3, min(20, int(abs(original_value))))
+                                    elif param_name == 'weights':
+                                        # Handle categorical weights
+                                        if abs(original_value) > 0.5:
+                                            predicted_hyperparams[param_name] = 'distance'
+                                        else:
+                                            predicted_hyperparams[param_name] = 'uniform'
+                                    elif param_name == 'algorithm':
+                                        # Handle categorical algorithm
+                                        algo_value = abs(original_value)
+                                        if algo_value < 0.25:
+                                            predicted_hyperparams[param_name] = 'auto'
+                                        elif algo_value < 0.5:
+                                            predicted_hyperparams[param_name] = 'ball_tree'
+                                        elif algo_value < 0.75:
+                                            predicted_hyperparams[param_name] = 'kd_tree'
+                                        else:
+                                            predicted_hyperparams[param_name] = 'brute'
+                                    elif param_name == 'p':
+                                        predicted_hyperparams[param_name] = max(1, min(2, int(abs(original_value))))
                                     else:
                                         predicted_hyperparams[param_name] = original_value
                 else:
@@ -1325,11 +1467,11 @@ def main():
     
     # Configuration - Use absolute paths
     import os
-    base_dir = "C:\Users\ahker\Desktop\University\auto_ml\auto_ml_tabular"
+    base_dir = "/Users/sarthakbiswas/Documents/automl/auto_ml_tabular"
     NAS_HPO_RESULTS_DIR = os.path.join(base_dir, "nas_hpo_results")
     ORIGINAL_DATA_DIR = os.path.join(base_dir, "data")
     FE_DATA_DIR = os.path.join(base_dir, "data_engineered_autofeat")
-    OUTPUT_DIR = os.path.join(base_dir, "meta_learning_models")
+    OUTPUT_DIR = os.path.join(base_dir, "meta_learning_model")
     
     # Initialize meta-learning system
     meta_automl = AdvancedMetaLearningAutoML(OUTPUT_DIR)
