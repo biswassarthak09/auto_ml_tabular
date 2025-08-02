@@ -3,7 +3,12 @@ AutoML Training Pipeline
 Complete training pipeline for tabular regression tasks
 
 Components:
-1. Feature Engineering (Conservative AutoFeat)
+1. F    except Exception as e    except Exception as e:
+        logger.error(f"Meta-learning failed: {str(e)}")
+        results['meta_learning'] = f'FAILED: {str(e)}'
+        print("❌ Meta-learning failed - this is required for final model training!")      logger.error(f"NAS-HPO failed: {str(e)}")
+        results['nas_hpo'] = f'FAILED: {str(e)}'
+        print("❌ NAS-HPO failed - this is required for meta-learning!")re Engineering (Conservative AutoFeat)
 2. NAS-HPO (Neural Architecture Search + Hyperparameter Optimization)
 3. Meta-Learning (Train meta-model for algorithm selection)
 4. Final Model Training & Evaluation
@@ -48,9 +53,9 @@ def run_training_pipeline():
     config = {
         'data_dir': str(ROOT_DIR / 'data'),
         'engineered_data_dir': str(ROOT_DIR / 'data_engineered_autofeat'),
-        'nas_hpo_output_dir': 'nas_hpo_results',
-        'meta_learning_output_dir': str(ROOT_DIR / 'nas_hpo_results'),
-        'final_models_output_dir': str(ROOT_DIR / 'meta_learning_model'),
+        'nas_hpo_output_dir': str(ROOT_DIR / 'nas_hpo_results'),
+        'meta_learning_output_dir': str(ROOT_DIR / 'meta_learning_model'),
+        'final_models_output_dir': str(ROOT_DIR / 'result' / 'final_models'),
         'datasets': ['bike_sharing_demand', 'brazilian_houses', 'superconductivity', 'wine_quality', 'yprop_4_1']
     }
     

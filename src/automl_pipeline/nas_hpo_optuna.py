@@ -729,7 +729,7 @@ def main():
     """Main execution function"""
     # Configuration - Optimized for high performance with focused algorithms
     DATA_DIR = "data_engineered_autofeat"  # Use the engineered data from feature_engineering.py
-    RESULTS_DIR = "nas_hpo_results_v3"
+    RESULTS_DIR = "nas_hpo_results"  # Use existing directory for consistency with meta-learning
     TASK_TYPE = "regression"
     N_TRIALS_PER_ALGORITHM = 50  # Increased trials for better optimization
     

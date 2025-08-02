@@ -29,8 +29,12 @@ try:
     # Import PyTorch MLP from nas_hpo_optuna
     from nas_hpo_optuna import PyTorchMLP, PYTORCH_AVAILABLE
 except ImportError:
-    PyTorchMLP = None
-    PYTORCH_AVAILABLE = False
+    try:
+        # Try relative import
+        from .nas_hpo_optuna import PyTorchMLP, PYTORCH_AVAILABLE
+    except ImportError:
+        PyTorchMLP = None
+        PYTORCH_AVAILABLE = False
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -81,18 +85,18 @@ class FinalModelTrainer:
         if XGBOOST_AVAILABLE and xgb is not None:
             self.algorithm_map['xgboost'] = xgb.XGBRegressor
             logger.info("✅ XGBoost available for final model training")
-        else:
-            raise RuntimeError("XGBoost is required but not available!")
-            
+        
         # Add MLP - neural network for complex patterns  
         if PYTORCH_AVAILABLE and PyTorchMLP:
             self.algorithm_map['mlp'] = PyTorchMLP
             logger.info("✅ PyTorch MLP available for final model training (GPU/CPU auto-detection)")
         else:
-            raise RuntimeError("PyTorch MLP is required but not available!")
+            logger.error("❌ PyTorch MLP not available! This is a REQUIRED algorithm for optimal performance.")
+            logger.error("💡 Install PyTorch with: pip install torch")
+            logger.warning("⚠️ Continuing with reduced algorithm set - performance may be impacted")
         
         logger.info(f"📋 Core algorithms available for final training: {len(self.algorithm_map)}")
-        logger.info(f"🎯 Focused on 4 high-performance algorithms: {list(self.algorithm_map.keys())}")
+        logger.info(f"🎯 Target: 4 high-performance algorithms, Current: {list(self.algorithm_map.keys())}")
         
         # Load meta-learning model (MANDATORY - no fallbacks)
         self.meta_model = None
@@ -111,7 +115,10 @@ class FinalModelTrainer:
         """Load the trained meta-learning model - MANDATORY"""
         logger.info(f"Loading meta-learning model from {self.meta_learning_model_dir}")
         
-        # Import meta-learning model
+        # Import meta-learning model with absolute path
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
         from meta_learning import AdvancedMetaLearningAutoML
         self.meta_model = AdvancedMetaLearningAutoML(self.meta_learning_model_dir)
         
@@ -134,8 +141,8 @@ class FinalModelTrainer:
         
         logger.info(f"Using meta-learning model for prediction on {dataset_name}")
         
-        # Use absolute path for original data directory
-        original_data_dir = r"C:\Users\ahker\Desktop\University\auto_ml\auto_ml_tabular\data"
+        # Use relative path for original data directory (more flexible)
+        original_data_dir = str(Path(self.data_dir).parent / "data")
         
         prediction = self.meta_model.predict_for_new_dataset(
             dataset_name, 
@@ -255,7 +262,7 @@ class FinalModelTrainer:
         logger.info(f"Created {algorithm} model with params: {filtered_params}")
         return model
     
-    def load_dataset_data(self, dataset_name: str, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    def load_dataset_data(self, dataset_name: str, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, Optional[pd.Series]]:
         """
         Load training and test data for a specific dataset and fold.
         Returns X_train, X_test, y_train, y_test for training and prediction.
@@ -272,37 +279,43 @@ class FinalModelTrainer:
         
         # Load target variables and ensure they are Series
         y_train_df = pd.read_parquet(fold_dir / 'y_train.parquet')
-        y_test_df = pd.read_parquet(fold_dir / 'y_test.parquet')
         
-        # Convert to Series if needed
+        # Check if y_test exists (for exam datasets, it might not)
+        y_test_path = fold_dir / 'y_test.parquet'
+        y_test = None
+        if y_test_path.exists():
+            y_test_df = pd.read_parquet(y_test_path)
+            if isinstance(y_test_df, pd.DataFrame):
+                y_test = y_test_df.iloc[:, 0]  # Get first column as Series
+            else:
+                y_test = y_test_df
+        
+        # Convert y_train to Series if needed
         if isinstance(y_train_df, pd.DataFrame):
             y_train = y_train_df.iloc[:, 0]  # Get first column as Series
         else:
             y_train = y_train_df
-            
-        if isinstance(y_test_df, pd.DataFrame):
-            y_test = y_test_df.iloc[:, 0]  # Get first column as Series
-        else:
-            y_test = y_test_df
         
         logger.info(f"Loaded data for {dataset_name} fold {fold}: "
-                   f"X_train: {X_train.shape}, X_test: {X_test.shape}")
+                   f"X_train: {X_train.shape}, X_test: {X_test.shape}, y_test: {'Available' if y_test is not None else 'Missing (Exam Dataset)'}")
         
         return X_train, X_test, y_train, y_test
     
-    def evaluate_model(self, model, X_test: pd.DataFrame, y_test: pd.Series) -> Tuple[Dict[str, float], np.ndarray]:
-        """Evaluate model performance using regression metrics"""
+    def evaluate_model(self, model, X_test: pd.DataFrame, y_test: Optional[pd.Series] = None) -> Tuple[Optional[Dict[str, float]], np.ndarray]:
+        """Evaluate model performance using regression metrics (if y_test available)"""
         
         # Predict y on X_test
         y_pred = model.predict(X_test)
         
-        # Calculate regression metrics
-        metrics = {
-            'mse': mean_squared_error(y_test, y_pred),
-            'mae': mean_absolute_error(y_test, y_pred),
-            'r2_score': r2_score(y_test, y_pred),
-            'rmse': np.sqrt(mean_squared_error(y_test, y_pred))
-        }
+        # Calculate regression metrics only if y_test is available
+        metrics = None
+        if y_test is not None:
+            metrics = {
+                'mse': mean_squared_error(y_test, y_pred),
+                'mae': mean_absolute_error(y_test, y_pred),
+                'r2_score': r2_score(y_test, y_pred),
+                'rmse': np.sqrt(mean_squared_error(y_test, y_pred))
+            }
         
         return metrics, y_pred
     
@@ -342,10 +355,17 @@ class FinalModelTrainer:
         joblib.dump(model, model_path)
         
         # Save predictions
-        pred_df = pd.DataFrame({
-            'y_true': y_test,
-            'y_pred': y_pred
-        })
+        if y_test is not None:
+            # Standard case: both y_true and y_pred
+            pred_df = pd.DataFrame({
+                'y_true': y_test,
+                'y_pred': y_pred
+            })
+        else:
+            # Exam case: only y_pred (no ground truth available)
+            pred_df = pd.DataFrame({
+                'y_pred': y_pred
+            })
         pred_df.to_csv(self.output_dir / f"{dataset_name}_fold_{fold}_predictions.csv", index=False)
         
         result = {
@@ -356,10 +376,14 @@ class FinalModelTrainer:
             'metrics': metrics,
             'model_path': str(model_path),
             'train_shape': X_train.shape,
-            'test_shape': X_test.shape
+            'test_shape': X_test.shape,
+            'is_exam_dataset': y_test is None
         }
         
-        logger.info(f"Fold {fold} results: MSE={metrics['mse']:.4f}, R²={metrics['r2_score']:.4f}")
+        if metrics is not None:
+            logger.info(f"Fold {fold} results: MSE={metrics['mse']:.4f}, R²={metrics['r2_score']:.4f}")
+        else:
+            logger.info(f"Fold {fold} predictions saved (exam dataset - no ground truth available)")
         
         return result
     
@@ -392,14 +416,19 @@ class FinalModelTrainer:
         
         # Calculate average metrics across folds
         if results:
-            avg_metrics = {}
-            for metric in results[0]['metrics']:
-                avg_metrics[f'avg_{metric}'] = np.mean([r['metrics'][metric] for r in results])
-                avg_metrics[f'std_{metric}'] = np.std([r['metrics'][metric] for r in results])
-            
-            logger.info(f"Dataset {dataset_name} average results:")
-            logger.info(f"  Average MSE: {avg_metrics['avg_mse']:.4f} ± {avg_metrics['std_mse']:.4f}")
-            logger.info(f"  Average R²: {avg_metrics['avg_r2_score']:.4f} ± {avg_metrics['std_r2_score']:.4f}")
+            # Check if we have metrics (not an exam dataset)
+            if results[0]['metrics'] is not None:
+                avg_metrics = {}
+                for metric in results[0]['metrics']:
+                    avg_metrics[f'avg_{metric}'] = np.mean([r['metrics'][metric] for r in results])
+                    avg_metrics[f'std_{metric}'] = np.std([r['metrics'][metric] for r in results])
+                
+                logger.info(f"Dataset {dataset_name} average results:")
+                logger.info(f"  Average MSE: {avg_metrics['avg_mse']:.4f} ± {avg_metrics['std_mse']:.4f}")
+                logger.info(f"  Average R²: {avg_metrics['avg_r2_score']:.4f} ± {avg_metrics['std_r2_score']:.4f}")
+            else:
+                avg_metrics = None
+                logger.info(f"Dataset {dataset_name}: Exam dataset - no metrics available (predictions generated)")
             
             # Save summary
             summary = {
