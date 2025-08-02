@@ -731,7 +731,7 @@ def main():
     DATA_DIR = "data_engineered_autofeat"  # Use the engineered data from feature_engineering.py
     RESULTS_DIR = "nas_hpo_results_v3"
     TASK_TYPE = "regression"
-    N_TRIALS_PER_ALGORITHM = 200  # Increased trials for better optimization
+    N_TRIALS_PER_ALGORITHM = 50  # Increased trials for better optimization
     
     # Initialize and run optimization
     optimizer = NASHPOOptimizer(DATA_DIR, RESULTS_DIR, TASK_TYPE)

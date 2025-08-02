@@ -387,7 +387,7 @@ class FeatureEngineer:
 def main():
     """Main execution function"""
     # Configuration
-    DATA_DIR = "data"  # Directory containing your 5 datasets
+    DATA_DIR = r"C:\Users\ahker\Desktop\University\auto_ml\auto_ml_tabular\data"  # Directory containing your 5 datasets
     OUTPUT_DIR = "data_engineered_autofeat"  # Match the existing directory structure
     TASK_TYPE = "regression"
 
