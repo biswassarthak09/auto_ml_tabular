@@ -541,7 +541,7 @@ def main():
     
     # Configuration
     import os
-    base_dir = "/Users/sarthakbiswas/Documents/automl/auto_ml_tabular"
+    base_dir = r"C:\Users\ahker\Desktop\University\auto_ml\auto_ml_tabular"
     data_dir = os.path.join(base_dir, "data_engineered_autofeat")
     output_dir = os.path.join(base_dir, "result/final_models")
     meta_learning_model_dir = os.path.join(base_dir, "meta_learning_model")  # Absolute path to trained meta-learning model
