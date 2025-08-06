@@ -1467,7 +1467,7 @@ def main():
     
     # Configuration - Use absolute paths
     import os
-    base_dir = "/Users/sarthakbiswas/Documents/automl/auto_ml_tabular"
+    base_dir = r"C:\Users\ahker\Desktop\University\auto_ml\auto_ml_tabular"
     NAS_HPO_RESULTS_DIR = os.path.join(base_dir, "nas_hpo_results")
     ORIGINAL_DATA_DIR = os.path.join(base_dir, "data")
     FE_DATA_DIR = os.path.join(base_dir, "data_engineered_autofeat")
@@ -1511,7 +1511,7 @@ def main():
                 algo_probs = torch.softmax(algo_logits, dim=1).cpu().numpy()
                 
                 print("\n🎯 Prediction Results for Each Dataset:")
-                datasets = ["bike_sharing_demand", "brazilian_houses", "superconductivity", "wine_quality", "yprop_4_1"]
+                datasets = ["bike_sharing_demand", "brazilian_houses", "exam_dataset", "superconductivity", "wine_quality", "yprop_4_1"]
                 for i, dataset in enumerate(datasets):
                     if i < len(predicted_algos):
                         predicted_algo = meta_automl.algorithms_list[predicted_algos[i]]

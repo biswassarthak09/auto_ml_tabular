@@ -38,33 +38,31 @@ class FeatureEngineer:
         self.scaler = None
         self.autofeat_model = None  # Will be created per dataset
     
-    def load_data(self, dataset_name: str, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, Optional[pd.Series]]:
+    def load_data(self, dataset_name: str, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         """Load parquet files for specific dataset and fold"""
         fold_path = self.data_dir / dataset_name / str(fold)
         
         # Load X and y separately
         X_train_path = fold_path / 'X_train.parquet'
         X_test_path = fold_path / 'X_test.parquet'
-        y_train_path = fold_path / 'y_train.parquet'
+        y_train_path = fold_path / 'y_train.parquet'  
         y_test_path = fold_path / 'y_test.parquet'
         
-        # Check if required files exist
-        for path in [X_train_path, X_test_path, y_train_path]:
-            if not path.exists():
-                raise FileNotFoundError(f"File not found: {path}")
+        # Check if all files exist
+        # for path in [X_train_path, X_test_path, y_train_path, y_test_path]:
+        #     if not path.exists():
+        #         raise FileNotFoundError(f"File not found: {path}")
         
         # Load the data
         X_train = pd.read_parquet(X_train_path)
         X_test = pd.read_parquet(X_test_path)
-        y_train = pd.read_parquet(y_train_path).iloc[:, 0]  # Convert to Series
-        
-        # y_test might not exist (exam datasets)
-        y_test = None
-        if y_test_path.exists():
+        y_train = pd.read_parquet(y_train_path).iloc[:, 0]
+        # If dataset is 'exam_dataset' and y_test is missing, create a dummy y_test
+        if dataset_name == "exam_dataset":
+            logger.warning(f"{dataset_name} fold {fold} has no y_test. Creating dummy y_test.")
+            y_test = pd.Series([0] * len(X_test), index=X_test.index, name="target")# Convert to Series
+        else :
             y_test = pd.read_parquet(y_test_path).iloc[:, 0]    # Convert to Series
-            logger.info(f"Loaded data: X_train {X_train.shape}, X_test {X_test.shape}, y_test available")
-        else:
-            logger.info(f"Loaded data: X_train {X_train.shape}, X_test {X_test.shape}, y_test missing (exam dataset)")
         
         return X_train, X_test, y_train, y_test
     
@@ -311,7 +309,7 @@ class FeatureEngineer:
         return X_train_final, X_test_final
     
     def save_engineered_data(self, X_train: pd.DataFrame, X_test: pd.DataFrame,
-                           y_train: pd.Series, y_test: Optional[pd.Series],
+                           y_train: pd.Series, y_test: pd.Series,
                            dataset_name: str, fold: int):
         """Save engineered features and targets"""
         fold_dir = self.output_dir / dataset_name / str(fold)
@@ -323,10 +321,7 @@ class FeatureEngineer:
         
         # Save targets
         y_train.to_frame('target').to_parquet(fold_dir / 'y_train.parquet')
-        
-        # Save y_test only if it exists (exam datasets might not have it)
-        if y_test is not None:
-            y_test.to_frame('target').to_parquet(fold_dir / 'y_test.parquet')
+        y_test.to_frame('target').to_parquet(fold_dir / 'y_test.parquet')
         
         # Save feature names
         feature_names = {
@@ -336,8 +331,6 @@ class FeatureEngineer:
         joblib.dump(feature_names, fold_dir / 'feature_info.pkl')
         
         logger.info(f"Saved engineered data for {dataset_name} fold {fold}")
-        if y_test is None:
-            logger.info(f"Note: y_test not saved (exam dataset)")
     
     def process_all_datasets(self):
         """Process all datasets, folds, and splits"""
@@ -357,15 +350,18 @@ class FeatureEngineer:
             self.autofeat_model = None  # Reset AutoFeat model for each dataset
             
             # Process each fold
-            for fold in range(1, 11):  # Assuming folds 1-10
+            fold_dirs = [f for f in dataset_dir.iterdir() if f.is_dir() and f.name.isdigit()]
+            fold_numbers = sorted([int(f.name) for f in fold_dirs])
+            for fold in fold_numbers:
                 try:
                     logger.info(f"Processing fold {fold}")
                     
                     # Load training and test data
                     X_train, X_test, y_train, y_test = self.load_data(dataset_name, fold)
                     
+
                     # First fold of each dataset fits the preprocessors
-                    is_first_fold = (fold == 1)
+                    is_first_fold = (fold == fold_numbers[0])
                     
                     # Preprocess data
                     X_train_processed, X_test_processed = self.preprocess_data(
@@ -398,18 +394,10 @@ class FeatureEngineer:
 
 def main():
     """Main execution function"""
-    from pathlib import Path
-    
-    # Get the root directory (go up 2 levels from src/automl_pipeline)
-    ROOT_DIR = Path(__file__).resolve().parents[2]
-    
-    # Configuration - Use absolute paths
-    DATA_DIR = str(ROOT_DIR / "data")  # Directory containing your 5 datasets
-    OUTPUT_DIR = str(ROOT_DIR / "data_engineered_autofeat")  # Match the existing directory structure
+    # Configuration
+    DATA_DIR = "data"  # Directory containing your 5 datasets
+    OUTPUT_DIR = "data_engineered_autofeat"  # Match the existing directory structure
     TASK_TYPE = "regression"
-
-    print(f"Using data directory: {DATA_DIR}")
-    print(f"Using output directory: {OUTPUT_DIR}")
 
     # Initialize and run feature engineering
     fe = FeatureEngineer(DATA_DIR, OUTPUT_DIR, TASK_TYPE)
