@@ -7,12 +7,13 @@ import optuna
 from optuna.samplers import TPESampler
 import joblib
 import logging
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, AdaBoostRegressor
 from sklearn.linear_model import Ridge, Lasso
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.model_selection import cross_val_score
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -276,14 +277,21 @@ class NASHPOOptimizer:
         if PYTORCH_AVAILABLE:
             self.core_algorithms['mlp'] = PyTorchMLP  # Deep learning option
     
-    def load_fold_data(self, dataset_name: str, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    def load_fold_data(self, dataset_name: str, fold: int) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, Optional[pd.Series]]:
         """Load engineered data for specific dataset and fold"""
         fold_dir = self.data_dir / dataset_name / str(fold)
         
         X_train = pd.read_parquet(fold_dir / 'X_train_engineered.parquet')
         X_test = pd.read_parquet(fold_dir / 'X_test_engineered.parquet')
         y_train = pd.read_parquet(fold_dir / 'y_train.parquet')['target']
-        y_test = pd.read_parquet(fold_dir / 'y_test.parquet')['target']
+        
+        # Handle exam datasets where y_test might not exist
+        y_test_path = fold_dir / 'y_test.parquet'
+        if y_test_path.exists():
+            y_test = pd.read_parquet(y_test_path)['target']
+        else:
+            y_test = None
+            logger.info(f"y_test not found for {dataset_name} fold {fold} - assuming exam dataset")
         
         return X_train, X_test, y_train, y_test
     
@@ -441,14 +449,29 @@ class NASHPOOptimizer:
                 try:
                     X_train, X_test, y_train, y_test = self.load_fold_data(dataset_name, fold)
                     
-                    # Train and evaluate
-                    model.fit(X_train, y_train)
-                    y_pred = model.predict(X_test)
-                    
-                    # Calculate multiple metrics
-                    mse = mean_squared_error(y_test, y_pred)
-                    mae = mean_absolute_error(y_test, y_pred)
-                    r2 = r2_score(y_test, y_pred)
+                    if y_test is not None:
+                        # Standard case: train on X_train/y_train, evaluate on X_test/y_test
+                        model.fit(X_train, y_train)
+                        y_pred = model.predict(X_test)
+                        
+                        # Calculate multiple metrics
+                        mse = mean_squared_error(y_test, y_pred)
+                        mae = mean_absolute_error(y_test, y_pred)
+                        r2 = r2_score(y_test, y_pred)
+                    else:
+                        # Exam dataset case: use cross-validation on training data only
+                        
+                        # Use 3-fold CV on training data for quick evaluation
+                        cv_r2_scores = cross_val_score(model, X_train, y_train, cv=3, scoring='r2')
+                        cv_mse_scores = cross_val_score(model, X_train, y_train, cv=3, scoring='neg_mean_squared_error')
+                        cv_mae_scores = cross_val_score(model, X_train, y_train, cv=3, scoring='neg_mean_absolute_error')
+                        
+                        # Use mean CV scores
+                        r2 = np.mean(cv_r2_scores)
+                        mse = -np.mean(cv_mse_scores)  # Convert back from negative
+                        mae = -np.mean(cv_mae_scores)  # Convert back from negative
+                        
+                        logger.info(f"Exam dataset {dataset_name} fold {fold}: Using CV on training data, R²={r2:.4f}")
                     
                     # Use R² score directly for optimization (0 to 1, higher is better)
                     score = r2
