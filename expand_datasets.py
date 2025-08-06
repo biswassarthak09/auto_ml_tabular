@@ -293,7 +293,7 @@ class DatasetExpander:
         logger.info(f"✅ Created fold structure for {dataset_name}")
         return dataset_dir
     
-    def expand_datasets(self, n_openml: int = 15, n_synthetic: int = 10):
+    def expand_datasets(self, n_openml: int = 15, n_synthetic: int = 0):
         """Main function to expand datasets"""
         
         logger.info("🚀 Starting dataset expansion...")

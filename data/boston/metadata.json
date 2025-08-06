@@ -1,0 +1,22 @@
+{
+  "name": "boston",
+  "n_samples": 506,
+  "n_features": 13,
+  "target_name": "MEDV",
+  "feature_names": [
+    "CRIM",
+    "ZN",
+    "INDUS",
+    "CHAS",
+    "NOX",
+    "RM",
+    "AGE",
+    "DIS",
+    "RAD",
+    "TAX",
+    "PTRATIO",
+    "B",
+    "LSTAT"
+  ],
+  "n_folds": 10
+}

@@ -1,0 +1,23 @@
+{
+  "name": "moneyball",
+  "n_samples": 1232,
+  "n_features": 14,
+  "target_name": "RS",
+  "feature_names": [
+    "Team",
+    "League",
+    "Year",
+    "RA",
+    "W",
+    "OBP",
+    "SLG",
+    "BA",
+    "Playoffs",
+    "RankSeason",
+    "RankPlayoffs",
+    "G",
+    "OOBP",
+    "OSLG"
+  ],
+  "n_folds": 10
+}

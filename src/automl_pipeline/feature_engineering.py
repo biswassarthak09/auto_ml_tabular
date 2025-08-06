@@ -45,19 +45,24 @@ class FeatureEngineer:
         # Load X and y separately
         X_train_path = fold_path / 'X_train.parquet'
         X_test_path = fold_path / 'X_test.parquet'
-        y_train_path = fold_path / 'y_train.parquet'
+        y_train_path = fold_path / 'y_train.parquet'  
         y_test_path = fold_path / 'y_test.parquet'
         
         # Check if all files exist
-        for path in [X_train_path, X_test_path, y_train_path, y_test_path]:
-            if not path.exists():
-                raise FileNotFoundError(f"File not found: {path}")
+        # for path in [X_train_path, X_test_path, y_train_path, y_test_path]:
+        #     if not path.exists():
+        #         raise FileNotFoundError(f"File not found: {path}")
         
         # Load the data
         X_train = pd.read_parquet(X_train_path)
         X_test = pd.read_parquet(X_test_path)
-        y_train = pd.read_parquet(y_train_path).iloc[:, 0]  # Convert to Series
-        y_test = pd.read_parquet(y_test_path).iloc[:, 0]    # Convert to Series
+        y_train = pd.read_parquet(y_train_path).iloc[:, 0]
+        # If dataset is 'exam_dataset' and y_test is missing, create a dummy y_test
+        if dataset_name == "exam_dataset":
+            logger.warning(f"{dataset_name} fold {fold} has no y_test. Creating dummy y_test.")
+            y_test = pd.Series([0] * len(X_test), index=X_test.index, name="target")# Convert to Series
+        else :
+            y_test = pd.read_parquet(y_test_path).iloc[:, 0]    # Convert to Series
         
         return X_train, X_test, y_train, y_test
     
@@ -345,15 +350,18 @@ class FeatureEngineer:
             self.autofeat_model = None  # Reset AutoFeat model for each dataset
             
             # Process each fold
-            for fold in range(1, 11):  # Assuming folds 1-10
+            fold_dirs = [f for f in dataset_dir.iterdir() if f.is_dir() and f.name.isdigit()]
+            fold_numbers = sorted([int(f.name) for f in fold_dirs])
+            for fold in fold_numbers:
                 try:
                     logger.info(f"Processing fold {fold}")
                     
                     # Load training and test data
                     X_train, X_test, y_train, y_test = self.load_data(dataset_name, fold)
                     
+
                     # First fold of each dataset fits the preprocessors
-                    is_first_fold = (fold == 1)
+                    is_first_fold = (fold == fold_numbers[0])
                     
                     # Preprocess data
                     X_train_processed, X_test_processed = self.preprocess_data(

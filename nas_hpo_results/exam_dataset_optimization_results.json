@@ -1,0 +1,85 @@
+[
+  {
+    "dataset": "exam_dataset",
+    "algorithm": "random_forest",
+    "best_params": {
+      "n_estimators": 218,
+      "max_depth": 20,
+      "min_samples_split": 15,
+      "min_samples_leaf": 6,
+      "max_features": "sqrt"
+    },
+    "best_score": 0.0,
+    "best_metrics": {
+      "composite_score": 0.0,
+      "mse": 273219519071.97852,
+      "mae": 443736.9667604806,
+      "r2": 0.0,
+      "fold_details": [
+        {
+          "mse": 273219519071.97852,
+          "mae": 443736.9667604806,
+          "r2": 0.0,
+          "composite_score": 0.0
+        }
+      ]
+    },
+    "n_trials": 50
+  },
+  {
+    "dataset": "exam_dataset",
+    "algorithm": "knn",
+    "best_params": {
+      "n_neighbors": 9,
+      "weights": "uniform",
+      "algorithm": "auto",
+      "p": 2
+    },
+    "best_score": 0.0,
+    "best_metrics": {
+      "composite_score": 0.0,
+      "mse": 237989043546.92163,
+      "mae": 394804.99121109495,
+      "r2": 0.0,
+      "fold_details": [
+        {
+          "mse": 237989043546.92163,
+          "mae": 394804.99121109495,
+          "r2": 0.0,
+          "composite_score": 0.0
+        }
+      ]
+    },
+    "n_trials": 50
+  },
+  {
+    "dataset": "exam_dataset",
+    "algorithm": "mlp",
+    "best_params": {
+      "n_layers": 2,
+      "layer_0_size": 490,
+      "layer_1_size": 388,
+      "activation": "relu",
+      "learning_rate": 0.00020511104188433984,
+      "batch_size": 64,
+      "max_iter": 108,
+      "alpha": 0.008706020878304856
+    },
+    "best_score": 0.0,
+    "best_metrics": {
+      "composite_score": 0.0,
+      "mse": 244006371328.0,
+      "mae": 408492.03125,
+      "r2": 0.0,
+      "fold_details": [
+        {
+          "mse": 244006371328.0,
+          "mae": 408492.03125,
+          "r2": 0.0,
+          "composite_score": 0.0
+        }
+      ]
+    },
+    "n_trials": 50
+  }
+]

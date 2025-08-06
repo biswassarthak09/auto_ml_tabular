@@ -37,7 +37,7 @@ except ImportError:
 
 warnings.filterwarnings('ignore')
 
-def load_datasets_from_directory(data_dir="data"):
+def load_datasets_from_directory(data_dir="data_engineered"):
     """Load all datasets from the directory structure"""
     datasets = {}
     data_path = Path(data_dir)
@@ -412,6 +412,7 @@ class MetaAutoMLOptuna:
                     if self.task_type == 'classification':
                         score = wrapped_model.score(X_val, y_val)
                     else:
+                        
                         score = wrapped_model.score(X_val, y_val)
                 else:
                     # Traditional ML models - handle parameter mapping
@@ -487,68 +488,22 @@ class MetaAutoMLOptuna:
             # For neural networks, we need to create the final architecture
             if not TF_AVAILABLE:
                 raise ValueError("TensorFlow not available for MLP model")
-            
             if len(self.datasets) == 0:
                 raise ValueError("No datasets available for final training")
-                
+
             # Use max dimensions for the final model
             max_features = max(X.shape[1] for X, y in self.datasets)
             model_params['input_dim'] = max_features
             if self.task_type == 'classification':
                 model_params['n_classes'] = len(np.unique(np.concatenate([y for X, y in self.datasets])))
+
+        self.best_model = self.models[model_name](**model_params)
             
-            self.best_model = self.models[model_name](**model_params)
-            
-            # Train on the first dataset as a representative sample (or largest dataset)
-            largest_dataset_idx = max(range(len(self.datasets)), key=lambda i: self.datasets[i][0].shape[0])
-            X_train, y_train = self.datasets[largest_dataset_idx]
-            
-            # Pad/truncate features to match expected dimensions
-            current_dim = X_train.shape[1]
-            if current_dim < max_features:
-                padding = np.zeros((X_train.shape[0], max_features - current_dim))
-                X_train = np.concatenate([X_train, padding], axis=1)
-            elif current_dim > max_features:
-                X_train = X_train[:, :max_features]
-            
-            # Train with early stopping
-            X_train_fit, X_val, y_train_fit, y_val = train_test_split(
-                X_train, y_train, test_size=0.2, random_state=self.random_state)
-            
-            self.best_model.fit(X_train_fit, y_train_fit,
-                              epochs=model_params['epochs'],
-                              batch_size=model_params['batch_size'],
-                              validation_data=(X_val, y_val),
-                              callbacks=[EarlyStopping(patience=5, restore_best_weights=True)],  # type: ignore
-                              verbose=0)
+        if self.best_params.get('model')== 'mlp':
+            self.best_model.save_weights(f"best_mlp_model.h5")
         else:
-            # For traditional ML models, train on each dataset separately and keep the best performing one
-            best_score = float('-inf') if self.metric == 'r2' else float('inf')
-            best_model = None
-            
-            for i, (X_train, y_train) in enumerate(self.datasets):
-                try:
-                    model = self.models[model_name](**model_params)
-                    model.fit(X_train, y_train)
-                    
-                    # Evaluate the model
-                    if self.metric == 'r2':
-                        score = model.score(X_train, y_train)
-                        if score > best_score:
-                            best_score = score
-                            best_model = model
-                    else:  # For metrics where lower is better
-                        from sklearn.model_selection import cross_val_score
-                        scores = cross_val_score(model, X_train, y_train, cv=3, scoring=self.metric)
-                        score = scores.mean()
-                        if score < best_score:
-                            best_score = score
-                            best_model = model
-                except Exception as e:
-                    print(f"Error training final model on dataset {i}: {str(e)}")
-                    continue
-            
-            self.best_model = best_model if best_model is not None else self.models[model_name](**model_params)
+            import joblib
+            joblib.dump(self.best_model, f"best_{model_name}_model.pkl")
         
         print(f"\nMeta-learning optimization completed!")
         print(f"Best model: {model_name}")
@@ -661,8 +616,65 @@ class MetaAutoMLOptuna:
             for name, data in datasets.items()
         }
         return self
+def train_and_test_meta_model_on_exam_dataset(meta_automl, data_dir):
+    """
+    Train a meta-automl model on the exam dataset.
+    Args:
+        meta_automl: Fitted MetaAutoMLOptuna instance
+        data_dir: Directory containing exam_dataset files
+    """
+    X_train_path = data_dir / "X_train.parquet"
+    y_train_path = data_dir / "y_train.parquet"
+    X_test_path = data_dir / "X_test.parquet"
 
-# Example usage with NAS enabled
+    if not (X_train_path.exists() and y_train_path.exists() and X_test_path.exists()):
+        print("Missing exam_dataset files.")
+        exit(1)
+
+    X_train = pd.read_parquet(X_train_path)
+    y_train = pd.read_parquet(y_train_path).iloc[:, 0]
+    X_test = pd.read_parquet(X_test_path)
+
+    # Preprocessing: fit on train, apply to test
+    numeric_cols = X_train.select_dtypes(include=[np.number]).columns
+    categorical_cols = X_train.select_dtypes(include=['object', 'category']).columns
+
+    # Fill missing values
+    if len(numeric_cols) > 0:
+        X_train[numeric_cols] = X_train[numeric_cols].fillna(X_train[numeric_cols].mean())
+        X_test[numeric_cols] = X_test[numeric_cols].fillna(X_train[numeric_cols].mean())
+    if len(categorical_cols) > 0:
+        X_train[categorical_cols] = X_train[categorical_cols].fillna(X_train[categorical_cols].mode().iloc[0])
+        X_test[categorical_cols] = X_test[categorical_cols].fillna(X_train[categorical_cols].mode().iloc[0])
+
+    # Encode categorical variables (fit on train, transform both)
+    for col in categorical_cols:
+        le = LabelEncoder()
+        X_train[col] = le.fit_transform(X_train[col].astype(str))
+        X_test[col] = le.transform(X_test[col].astype(str))
+
+    # Scale features (fit on train, transform both)
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    # Train model
+    meta_automl.best_model.fit(X_train_scaled, y_train)
+    print("Model trained on exam_dataset train set.")
+    
+    # R2 on train
+    r2_train = meta_automl.best_model.score(X_train_scaled, y_train)
+    print(f"R2 score on exam_dataset train: {r2_train:.4f}")
+
+    # Predict on test (no test R2)
+    y_pred = meta_automl.best_model.predict(X_test_scaled)
+    import json
+    preds_out = {"predictions": y_pred.tolist()}
+    with open("predictions_exam_dataset.json", "w") as f:
+        json.dump(preds_out, f)
+    print("Predictions saved to predictions_exam_dataset.json")
+    return y_pred, r2_train
+
 def meta_learning_with_nas_example():
     """Example of using meta-learning with NAS"""
     from sklearn.datasets import make_classification
@@ -677,7 +689,7 @@ def meta_learning_with_nas_example():
     )
     
     # Load and add all datasets
-    meta_automl.add_datasets_from_directory("data")
+    meta_automl.add_datasets_from_directory("data_engineered")
     
     # Perform meta-learning
     meta_automl.fit()
@@ -706,7 +718,18 @@ def meta_learning_with_nas_example():
             print(f"Could not display model summary: {str(e)}")
     else:
         print(meta_automl.best_model)
-    
+
+    # Test on exam-dataset if available
+    exam_data_dir = Path(__file__).parent / "data_engineered" / "exam_dataset"/ "1"
+    X_test_path = exam_data_dir / "X_test.parquet"
+    if X_test_path.exists():
+        preds, score = train_and_test_meta_model_on_exam_dataset(meta_automl, exam_data_dir)
+        print("exam-dataset results:")
+        print(f"Predictions: {preds[:10]}")
+        print(f"Score on training: {score}")
+    else:
+        print("exam-dataset not found or missing files.")
+
     return meta_automl
 
 if __name__ == "__main__":
